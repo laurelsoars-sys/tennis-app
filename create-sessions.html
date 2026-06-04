@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Session</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+    .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); width: 100%; max-width: 420px; }
+    h1 { margin-top: 0; font-size: 24px; color: #1a1a1a; }
+    label { font-size: 14px; color: #444; display: block; margin-bottom: 4px; }
+    input { width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
+    button { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    .back { background: none; color: #666; border: 1px solid #ddd; margin-bottom: 12px; }
+    .back:hover { background: #f0f4f8; color: #1a1a1a; }
+    .success { color: green; font-size: 14px; margin-top: 12px; text-align: center; }
+    .error { color: red; font-size: 14px; margin-top: 12px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <button class="back" onclick="window.location.href='coach.html'">Back to dashboard</button>
+    <h1>Create session</h1>
+    <label>Date</label>
+    <input type="date" id="date" />
+    <label>Time</label>
+    <input type="text" id="time" placeholder="e.g. 5:00 PM" />
+    <label>Expected number of kids</label>
+    <input type="number" id="kids" placeholder="e.g. 18" />
+    <button onclick="createSession()">Create session</button>
+    <div class="success" id="success"></div>
+    <div class="error" id="error"></div>
+  </div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || user.role !== 'coach') window.location.href = 'index.html';
+
+    async function createSession() {
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      const kids = document.getElementById('kids').value;
+
+      if (!date || !time || !kids) {
+        document.getElementById('error').textContent = 'Please fill in all fields.';
+        return;
+      }
+
+      try {
+        const response = await fetch('https://your-render-url.onrender.com/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: date,
+            time: time,
+            expected_kids: parseInt(kids),
+            created_by: user.id
+          })
+        });
+
+        if (response.ok) {
+          document.getElementById('success').textContent = 'Session created successfully!';
+          document.getElementById('error').textContent = '';
+          document.getElementById('date').value = '';
+          document.getElementById('time').value = '';
+          document.getElementById('kids').value = '';
+        } else {
+          document.getElementById('error').textContent = 'Failed to create session.';
+        }
+      } catch (err) {
+        document.getElementById('error').textContent = 'Cannot reach server.';
+      }
+    }
+  </script>
+</body>
+</html>
