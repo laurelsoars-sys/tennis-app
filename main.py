@@ -65,7 +65,14 @@ def create_session(session: Session):
 @app.get("/availability/{session_id}")
 def get_availability(session_id: str):
     result = supabase.table("availability").select("*").filter("session_id", "eq", session_id).execute()
-    return result.data
+    availability = result.data
+    for record in availability:
+        profile = supabase.table("profiles").select("full_name").filter("id", "eq", record["helper_id"]).execute()
+        if len(profile.data) > 0:
+            record["helper_name"] = profile.data[0]["full_name"]
+        else:
+            record["helper_name"] = "Unknown helper"
+    return availability
 
 @app.post("/availability")
 def mark_availability(availability: Availability):

@@ -63,7 +63,7 @@
             ? '<p class="empty">No helpers available yet.</p>'
             : availability.map(a => `
                 <div class="helper-row">
-                  <span class="helper-name">${a.helper_id}</span>
+                  <span class="helper-name">${a.helper_name || a.helper_id}</span>
                   <button
                     class="${assignedIds.includes(a.helper_id) ? 'approved' : ''}"
                     onclick="approve('${session.id}', '${a.helper_id}', this)">
