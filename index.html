@@ -44,9 +44,11 @@
         const data = await response.json();
         if (response.ok) {
           localStorage.setItem('user', JSON.stringify(data));
-          window.location.href = 'sessions.html';
-        } else {
-          document.getElementById('error').textContent = data.detail || 'Login failed';
+          if (data.role === 'coach') {
+            window.location.href = 'coach.html';
+          } else {
+            window.location.href = 'sessions.html';
+          }
         }
       } catch (err) {
         document.getElementById('error').textContent = 'Cannot reach server. Is it running?';

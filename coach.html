@@ -4,48 +4,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Coach Dashboard</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    h1 { margin: 0; color: #1a1a1a; }
-    h2 { color: #1a1a1a; margin: 0 0 4px; }
-    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); margin-bottom: 16px; }
-    .session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .session-info p { margin: 0; color: #666; font-size: 14px; }
-    .helper-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #f0f0f0; }
-    .helper-name { font-size: 15px; color: #1a1a1a; }
-    button { padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
-    button:hover { background: #1d4ed8; }
-    .approved { background: #16a34a; }
-    .approved:hover { background: #15803d; }
-    .logout { background: none; color: #666; font-size: 14px; border: 1px solid #ddd; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
-    .logout:hover { background: #f0f4f8; }
-    .empty { color: #666; font-size: 14px; }
-    .pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 16px; }
-    .pagination button { width: auto; }
-    .page-info { font-size: 14px; color: #666; }
-    .header-buttons { display: flex; gap: 10px; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <div class="header">
-    <h1>Coach dashboard</h1>
+<body style="padding:20px">
+  <div class="page-header">
+    <div class="logo">
+      <div class="logo-icon">🎾</div>
+      <div>
+        <div class="logo-text">Coach dashboard</div>
+        <div class="logo-sub" id="welcome"></div>
+      </div>
+    </div>
     <div class="header-buttons">
-      <button onclick="window.location.href='fairness.html'">Fairness tracker</button>
-      <button onclick="window.location.href='create-session.html'">Create session</button>
-      <button class="logout" onclick="logout()">Sign out</button>
+      <button class="btn btn-secondary btn-sm" onclick="window.location.href='sessions.html'">Helper view</button>
+      <button class="btn btn-secondary btn-sm" onclick="window.location.href='fairness.html'">Fairness</button>
+      <button class="btn btn-primary btn-sm" onclick="window.location.href='create-session.html'">+ New session</button>
+      <button class="btn btn-secondary btn-sm" onclick="logout()">Sign out</button>
     </div>
   </div>
+
   <div id="dashboard"></div>
+
   <div class="pagination">
-    <button onclick="changePage(-1)" id="prev-btn" disabled>Previous</button>
+    <button class="btn btn-secondary btn-sm" onclick="changePage(-1)" id="prev-btn" disabled>Previous</button>
     <span class="page-info" id="page-info">Page 1</span>
-    <button onclick="changePage(1)" id="next-btn">Next</button>
+    <button class="btn btn-secondary btn-sm" onclick="changePage(1)" id="next-btn">Next</button>
   </div>
+
+  <div class="court-lines"></div>
 
   <script>
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user) window.location.href = 'index.html';
+    document.getElementById('welcome').textContent = `Hi ${user.full_name}!`;
 
     const LIMIT = 5;
     let offset = 0;
@@ -86,7 +77,6 @@
         for (const session of sessions) {
           const availRes = await fetch(`https://tennis-app-9esu.onrender.com/availability/${session.id}`);
           const availability = await availRes.json();
-
           const assignRes = await fetch(`https://tennis-app-9esu.onrender.com/assignments/${session.id}`);
           const assignments = await assignRes.json();
           const assignedIds = assignments.filter(a => a.status === 'approved').map(a => a.helper_id);
@@ -97,71 +87,70 @@
                 const assignment = assignments.find(x => x.helper_id === a.helper_id);
                 const status = assignment ? assignment.status : null;
 
-                let btn = '';
+                let btns = '';
                 if (status === 'approved') {
-                  btn = `
-                    <div style="display:flex;gap:6px;">
-                      <button class="approved" disabled>Approved</button>
-                      <button style="background:#6b7280" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist', this.parentElement)">Undo</button>
+                  btns = `
+                    <div class="action-btns">
+                      <span class="tag tag-green">Approved</span>
+                      <button class="btn btn-gray btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist')">Undo</button>
                     </div>`;
                 } else if (status === 'waitlist') {
-                  btn = `
-                    <div style="display:flex;gap:6px;">
-                      <button style="background:#ca8a04" disabled>Waitlisted</button>
-                      <button style="background:#16a34a" onclick="updateStatus('${session.id}', '${a.helper_id}', 'approved', this.parentElement)">Approve</button>
-                      <button style="background:#dc2626" onclick="updateStatus('${session.id}', '${a.helper_id}', 'declined', this.parentElement)">Decline</button>
+                  btns = `
+                    <div class="action-btns">
+                      <span class="tag tag-yellow">Waitlisted</span>
+                      <button class="btn btn-approved btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'approved')">Approve</button>
+                      <button class="btn btn-danger btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'declined')">Decline</button>
                     </div>`;
                 } else if (status === 'declined') {
-                  btn = `
-                    <div style="display:flex;gap:6px;">
-                      <button style="background:#dc2626" disabled>Declined</button>
-                      <button style="background:#6b7280" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist', this.parentElement)">Undo</button>
+                  btns = `
+                    <div class="action-btns">
+                      <span class="tag tag-red">Declined</span>
+                      <button class="btn btn-gray btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist')">Undo</button>
                     </div>`;
                 } else {
-                  btn = `
-                    <div style="display:flex;gap:6px;">
-                      <button onclick="updateStatus('${session.id}', '${a.helper_id}', 'approved', this.parentElement)">Approve</button>
-                      <button style="background:#ca8a04" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist', this.parentElement)">Waitlist</button>
-                      <button style="background:#dc2626" onclick="updateStatus('${session.id}', '${a.helper_id}', 'declined', this.parentElement)">Decline</button>
+                  btns = `
+                    <div class="action-btns">
+                      <button class="btn btn-approved btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'approved')">Approve</button>
+                      <button class="btn btn-warning btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist')">Waitlist</button>
+                      <button class="btn btn-danger btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'declined')">Decline</button>
                     </div>`;
                 }
 
                 return `
                   <div class="helper-row">
                     <span class="helper-name">
-                      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${getColor(a.helper_name)};margin-right:8px;"></span>
+                      <span class="dot" style="background:${getColor(a.helper_name)}"></span>
                       ${a.helper_name || a.helper_id}
                     </span>
-                    ${btn}
-                  </div>
-                `;
-              }).join('')
+                    ${btns}
+                  </div>`;
+              }).join('');
 
           html += `
-            <div class="card">
-              <div class="session-header">
-                <div class="session-info">
+            <div class="card-wide">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+                <div>
                   <h2>${session.date}</h2>
-                  <p>${session.time} · ${session.expected_kids} kids expected · ${assignedIds.length} helper${assignedIds.length !== 1 ? 's' : ''} assigned</p>
+                  <p class="session-meta">${session.time} &middot; ${session.expected_kids} kids &middot; ${assignedIds.length} assigned</p>
                 </div>
-                <button style="background:#dc2626" onclick="deleteSession('${session.id}')">Delete</button>
-                <button style="background:#ca8a04" onclick="window.location.href='edit-session.html?id=${session.id}&date=${session.date}&time=${encodeURIComponent(session.time)}&kids=${session.expected_kids}'">Edit</button>
+                <div class="action-btns">
+                  <button class="btn btn-secondary btn-sm" onclick="window.location.href='edit-session.html?id=${session.id}&date=${session.date}&time=${encodeURIComponent(session.time)}&kids=${session.expected_kids}'">Edit</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteSession('${session.id}')">Delete</button>
+                </div>
               </div>
               ${helperRows}
-            </div>
-          `;
+            </div>`;
         }
 
         html += `
-          <div class="card" style="padding:12px 20px;">
-            <p style="margin:0;font-size:13px;color:#666;font-weight:500;">Fairness key</p>
-            <div style="display:flex;gap:20px;margin-top:8px;font-size:13px;color:#444;">
-              <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#16a34a;margin-right:6px;"></span>Fewest sessions</span>
-              <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ca8a04;margin-right:6px;"></span>Average</span>
-              <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dc2626;margin-right:6px;"></span>Most sessions</span>
+          <div class="card-wide" style="padding:12px 20px">
+            <p style="font-size:12px;color:#999;margin-bottom:8px;font-weight:500">FAIRNESS KEY</p>
+            <div style="display:flex;gap:16px;flex-wrap:wrap">
+              <span style="font-size:13px;color:#444;display:flex;align-items:center;gap:6px"><span class="dot" style="background:#16a34a"></span>Fewest sessions</span>
+              <span style="font-size:13px;color:#444;display:flex;align-items:center;gap:6px"><span class="dot" style="background:#ca8a04"></span>Average</span>
+              <span style="font-size:13px;color:#444;display:flex;align-items:center;gap:6px"><span class="dot" style="background:#dc2626"></span>Most sessions</span>
             </div>
-          </div>
-        `;
+          </div>`;
 
         dashboard.innerHTML = html;
       } catch (err) {
@@ -176,19 +165,13 @@
       loadDashboard();
       window.scrollTo(0, 0);
     }
-    async function deleteSession(sessionId) {
-      if (!confirm('Are you sure you want to delete this session?')) return;
-      await fetch(`https://tennis-app-9esu.onrender.com/sessions/${sessionId}`, {
-        method: 'DELETE'
-      });
-      loadDashboard();
-    }
-    async function updateStatus(sessionId, helperId, status, container) {
+
+    async function updateStatus(sessionId, helperId, status) {
       try {
         await fetch(`https://tennis-app-9esu.onrender.com/assignments/${sessionId}/${helperId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: status })
+          body: JSON.stringify({ status })
         });
         loadDashboard();
       } catch (err) {
@@ -196,11 +179,17 @@
       }
     }
 
+    async function deleteSession(sessionId) {
+      if (!confirm('Are you sure you want to delete this session?')) return;
+      await fetch(`https://tennis-app-9esu.onrender.com/sessions/${sessionId}`, { method: 'DELETE' });
+      loadDashboard();
+    }
+
     function logout() {
       localStorage.removeItem('user');
       window.location.href = 'index.html';
     }
-    
+
     loadDashboard();
   </script>
 </body>
