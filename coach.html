@@ -137,11 +137,17 @@
                     : '<span class="tag tag-gray">No response</span>';
                   btns = statusTag;
                 } else if (status === 'approved') {
-                  btns = `<div class="action-btns"><span class="tag tag-green">Approved</span><button class="btn btn-gray btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist')">Undo</button></div>`;
+  btns = `<div class="action-btns"><span class="tag tag-green">Approved</span><button class="btn btn-gray btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'pending')">Undo</button></div>`;
                 } else if (status === 'waitlist') {
                   btns = `<div class="action-btns"><span class="tag tag-yellow">Waitlisted</span><button class="btn btn-approved btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'approved')">Approve</button><button class="btn btn-danger btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'declined')">Decline</button></div>`;
                 } else if (status === 'declined') {
                   btns = `<div class="action-btns"><span class="tag tag-red">Declined</span><button class="btn btn-gray btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist')">Undo</button></div>`;
+                } else if (status === 'pending') {
+                  btns = `<div class="action-btns">
+                    <button class="btn btn-approved btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'approved')">Approve</button>
+                    <button class="btn btn-warning btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist')">Waitlist</button>
+                    <button class="btn btn-danger btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'declined')">Decline</button>
+                  </div>`;
                 } else {
                   btns = `<div class="action-btns"><button class="btn btn-approved btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'approved')">Approve</button><button class="btn btn-warning btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist')">Waitlist</button><button class="btn btn-danger btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'declined')">Decline</button></div>`;
                 }
@@ -208,6 +214,13 @@
     }
 
     async function updateStatus(sessionId, helperId, status) {
+      const messages = {
+        'approved': 'Approve this helper?',
+        'waitlist': 'Add this helper to the waitlist?',
+        'declined': 'Decline this helper?',
+        'pending': 'Undo this approval?'
+      };
+      if (!confirm(messages[status] || 'Are you sure?')) return;
       try {
         await fetch(`https://tennis-app-9esu.onrender.com/assignments/${sessionId}/${helperId}`, {
           method: 'PATCH',

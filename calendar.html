@@ -166,28 +166,55 @@
       document.getElementById('cal-grid').innerHTML = cells.join('');
     }
 
-    function showSessions(dateStr) {
-      const sessions = allSessions.filter(s => s.date === dateStr);
-      const container = document.getElementById('selected-sessions');
+    async function showSessions(dateStr) {
+        const sessions = allSessions.filter(s => s.date === dateStr);
+        const container = document.getElementById('selected-sessions');
 
-      container.innerHTML = `
-        <h2 style="margin-bottom:12px">${formatDate(dateStr)}</h2>
-        ${sessions.map(s => `
-          <div class="session-popup">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div>
-                <p style="font-weight:500;color:#1a1a1a">${s.time}</p>
-                <p class="session-meta">${s.expected_kids} kids expected${s.notes ? ` &middot; ${s.notes}` : ''}</p>
-              </div>
-              ${s.status === 'cancelled'
-                ? '<span class="tag tag-red">Cancelled</span>'
-                : mySessions.has(s.id)
-                  ? '<span class="tag tag-green">Responding</span>'
-                  : '<span class="tag tag-gray">No response</span>'}
-            </div>
-          </div>`).join('')}`;
+        let html = `<h2 style="margin-bottom:12px">${formatDate(dateStr)}</h2>`;
 
-      container.scrollIntoView({ behavior: 'smooth' });
+        for (const s of sessions) {
+            let helpersHtml = '';
+            if (user.role === 'coach') {
+            const assignRes = await fetch(`https://tennis-app-9esu.onrender.com/assignments/${s.id}`);
+            const assignments = await assignRes.json();
+            const availRes = await fetch(`https://tennis-app-9esu.onrender.com/availability/${s.id}`);
+            const availability = await availRes.json();
+            const nameMap = {};
+            availability.forEach(a => nameMap[a.helper_id] = a.helper_name);
+            
+            const approved = assignments.filter(a => a.status === 'approved');
+            if (approved.length > 0) {
+                helpersHtml = `
+                <div style="margin-top:10px;padding-top:10px;border-top:1px solid #f0f4f0">
+                    <p style="font-size:12px;color:#999;font-weight:500;margin-bottom:6px">ASSIGNED HELPERS</p>
+                    ${approved.map(a => `
+                    <p style="font-size:13px;color:#1a1a1a;padding:3px 0">${nameMap[a.helper_id] || a.helper_id}</p>
+                    `).join('')}
+                </div>`;
+            } else {
+                helpersHtml = `<p style="font-size:13px;color:#999;margin-top:8px">No helpers assigned yet</p>`;
+            }
+            }
+
+            html += `
+            <div class="session-popup">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <p style="font-weight:500;color:#1a1a1a">${s.time}</p>
+                    <p class="session-meta">${s.expected_kids} kids expected${s.notes ? ` &middot; ${s.notes}` : ''}</p>
+                </div>
+                ${s.status === 'cancelled'
+                    ? '<span class="tag tag-red">Cancelled</span>'
+                    : mySessions.has(s.id)
+                    ? '<span class="tag tag-green">Responding</span>'
+                    : '<span class="tag tag-gray">No response</span>'}
+                </div>
+                ${helpersHtml}
+            </div>`;
+        }
+
+        container.innerHTML = html;
+        container.scrollIntoView({ behavior: 'smooth' });
     }
 
     function changeMonth(dir) {

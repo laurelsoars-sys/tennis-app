@@ -247,7 +247,7 @@ def update_assignment(session_id: str, helper_id: str, update: AssignmentUpdate)
             "status": update.status
         }).execute()
 
-    if update.status in ["approved", "waitlist"]:
+    if update.status in ["approved", "waitlist", "pending"]:
         try:
             session = supabase.table("sessions").select("date, time").filter("id", "eq", session_id).execute()
             profile = supabase.table("profiles").select("phone, full_name").filter("id", "eq", helper_id).execute()
@@ -260,8 +260,10 @@ def update_assignment(session_id: str, helper_id: str, update: AssignmentUpdate)
                 
                 if update.status == "approved":
                     msg = f"Hi {name}! You've been approved for the tennis session on {date} at {time}. See you there!"
-                else:
+                elif update.status == "waitlist":
                     msg = f"Hi {name}! You've been added to the waitlist for the tennis session on {date} at {time}."
+                elif update.status == "pending":
+                    msg = f"Hi {name}! Your approval for the tennis session on {date} at {time} has been undone. Please check the app."
                 
                 send_sms(phone, msg)
         except Exception as e:
@@ -385,20 +387,25 @@ def get_helper_history(helper_id: str, filter: str = "upcoming"):
     result.sort(key=lambda x: x["date"])
     return result
 
-@app.get("/availability/user/{helper_id}")
-def get_helper_availability(helper_id: str):
-    result = supabase.table("availability").select("*").filter("helper_id", "eq", helper_id).execute()
-    return result.data
 @app.get("/notifications/{helper_id}")
 def get_notifications(helper_id: str):
-    assignments = supabase.table("assignments").select("sessions_id, status").filter("helper_id", "eq", helper_id).filter("status", "eq", "approved").execute()
+    assignments = supabase.table("assignments").select("sessions_id, status").filter("helper_id", "eq", helper_id).execute()
     
     result = []
     for a in assignments.data:
+        if a["status"] not in ["approved", "waitlist", "pending"]:
+            continue
         session = supabase.table("sessions").select("date, time").filter("id", "eq", a["sessions_id"]).execute()
         if session.data:
+            if a["status"] == "approved":
+                msg = f"You were approved for {session.data[0]['date']} at {session.data[0]['time']}"
+            elif a["status"] == "waitlist":
+                msg = f"You were waitlisted for {session.data[0]['date']} at {session.data[0]['time']}"
+            elif a["status"] == "pending":
+                msg = f"Your approval was undone for {session.data[0]['date']} at {session.data[0]['time']}"
             result.append({
-                "message": f"You were approved for {session.data[0]['date']} at {session.data[0]['time']}",
-                "session_id": a["sessions_id"]
+                "message": msg,
+                "session_id": a["sessions_id"],
+                "status": a["status"]
             })
     return result

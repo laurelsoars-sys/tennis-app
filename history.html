@@ -112,8 +112,8 @@
             ? '<span class="tag tag-red" style="margin-left:6px">Cancelled</span>'
             : '';
 
-          const withdrawBtn = filter === 'upcoming' && s.availability && s.status !== 'approved'
-            ? `<button class="btn btn-danger btn-sm" style="margin-top:10px;width:100%" onclick="withdraw('${s.id}')">Change response</button>`
+          const withdrawBtn = filter === 'upcoming' && s.availability === 'available' && s.status !== 'declined'
+            ? `<button class="btn btn-danger btn-sm" style="margin-top:10px;width:100%" onclick="withdraw('${s.id}')">Withdraw availability</button>`
             : '';
 
           return `
