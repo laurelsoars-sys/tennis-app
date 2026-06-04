@@ -49,8 +49,8 @@ def home():
 
 @app.get("/sessions")
 def get_sessions(limit: int = 5, offset: int = 0):
-    result = supabase.table("sessions").select("*").order("date").limit(limit).offset(offset).execute()
-    return result.data
+    result = supabase.table("sessions").select("*").order("date").execute()
+    return result.data[offset:offset+limit]
 
 @app.post("/sessions")
 def create_session(session: Session):
