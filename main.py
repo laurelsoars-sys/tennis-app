@@ -156,3 +156,22 @@ def signup(request: SignupRequest):
         return {"message": "Account created successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    @app.get("/fairness")
+def get_fairness():
+    profiles = supabase.table("profiles").select("id, full_name").filter("role", "eq", "helper").execute()
+    assignments = supabase.table("assignments").select("helper_id").execute()
+    
+    counts = {}
+    for assignment in assignments.data:
+        hid = assignment["helper_id"]
+        counts[hid] = counts.get(hid, 0) + 1
+    
+    result = []
+    for profile in profiles.data:
+        result.append({
+            "name": profile["full_name"],
+            "sessions": counts.get(profile["id"], 0)
+        })
+    
+    result.sort(key=lambda x: x["sessions"])
+    return result
