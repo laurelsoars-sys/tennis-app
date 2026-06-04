@@ -38,7 +38,7 @@
 
     async function loadDashboard() {
       try {
-        const sessionsRes = await fetch('http://127.0.0.1:8000/sessions');
+        const sessionsRes = await fetch('https://tennis-app-9esu.onrender.com/sessions');
         const sessions = await sessionsRes.json();
         console.log('sessions:', sessions);
         const dashboard = document.getElementById('dashboard');
@@ -50,11 +50,11 @@
 
         let html = '';
         for (const session of sessions) {
-          const availRes = await fetch(`http://127.0.0.1:8000/availability/${session.id}`);
+          const availRes = await fetch(`https://tennis-app-9esu.onrender.com/availability/${session.id}`);
           const availability = await availRes.json();
           console.log('availability:', availability);
 
-          const assignRes = await fetch(`http://127.0.0.1:8000/assignments/${session.id}`);
+          const assignRes = await fetch(`https://tennis-app-9esu.onrender.com/assignments/${session.id}`);
           const assignments = await assignRes.json();
           const assignedIds = assignments.map(a => a.helper_id);
 
@@ -92,7 +92,7 @@
 
     async function approve(sessionId, helperId, btn) {
       try {
-        await fetch('http://127.0.0.1:8000/assignments', {
+        await fetch('https://tennis-app-9esu.onrender.com/assignments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
