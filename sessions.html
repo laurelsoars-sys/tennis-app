@@ -8,6 +8,10 @@
 </head>
 <body style="padding:20px">
   <div class="page-header">
+    <div class="tabs" style="display:flex;gap:4px;margin-bottom:20px;background:#f0f4f0;padding:4px;border-radius:12px;width:fit-content">
+      <button id="tab-upcoming" style="padding:8px 20px;border-radius:9px;border:none;font-size:14px;font-weight:500;cursor:pointer;background:white;color:#16a34a;box-shadow:0 1px 4px rgba(0,0,0,0.08)" onclick="switchTab('upcoming')">Upcoming</button>
+      <button id="tab-past" style="padding:8px 20px;border-radius:9px;border:none;font-size:14px;font-weight:500;cursor:pointer;background:none;color:#666" onclick="switchTab('past')">Past sessions</button>
+    </div>
     <div class="logo">
       <div class="logo-icon">🎾</div>
       <div>
@@ -29,9 +33,9 @@
     if (user.role === 'coach') document.getElementById('coach-btn').style.display = 'inline-block';
     document.getElementById('welcome').textContent = `Hi ${user.full_name}!`;
 
-    async function loadSessions() {
+    async function loadSessions(filter = 'upcoming') {
       try {
-        const response = await fetch('https://tennis-app-9esu.onrender.com/sessions');
+        const response = await fetch(`https://tennis-app-9esu.onrender.com/sessions?filter=${filter}`);
         const sessions = await response.json();
         const list = document.getElementById('sessions-list');
         if (sessions.length === 0) {
@@ -77,6 +81,13 @@
         btn.dataset.available = 'true';
       }
     }
+    function switchTab(tab) {
+      document.getElementById('tab-upcoming').style.background = tab === 'upcoming' ? 'white' : 'none';
+      document.getElementById('tab-upcoming').style.color = tab === 'upcoming' ? '#16a34a' : '#666';
+      document.getElementById('tab-past').style.background = tab === 'past' ? 'white' : 'none';
+      document.getElementById('tab-past').style.color = tab === 'past' ? '#16a34a' : '#666';
+      loadSessions(tab);
+    } 
 
     function logout() {
       localStorage.removeItem('user');

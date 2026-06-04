@@ -59,9 +59,18 @@ def home():
     return {"message": "Tennis app is running!"}
 
 @app.get("/sessions")
-def get_sessions(limit: int = 5, offset: int = 0):
+def get_sessions(limit: int = 5, offset: int = 0, filter: str = "upcoming"):
+    from datetime import date
+    today = date.today().isoformat()
     result = supabase.table("sessions").select("*").order("date").execute()
-    return result.data[offset:offset+limit]
+    all_sessions = result.data
+    
+    if filter == "upcoming":
+        filtered = [s for s in all_sessions if s["date"] >= today]
+    else:
+        filtered = [s for s in all_sessions if s["date"] < today]
+    
+    return filtered[offset:offset+limit]
 
 class Session(BaseModel):
     date: str
