@@ -145,6 +145,7 @@
                   <p>${session.time} · ${session.expected_kids} kids expected · ${assignedIds.length} helper${assignedIds.length !== 1 ? 's' : ''} assigned</p>
                 </div>
                 <button style="background:#dc2626" onclick="deleteSession('${session.id}')">Delete</button>
+                <button style="background:#ca8a04" onclick="window.location.href='edit-session.html?id=${session.id}&date=${session.date}&time=${encodeURIComponent(session.time)}&kids=${session.expected_kids}'">Edit</button>
               </div>
               ${helperRows}
             </div>

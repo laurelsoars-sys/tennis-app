@@ -242,3 +242,20 @@ def update_assignment(session_id: str, helper_id: str, update: AssignmentUpdate)
             send_sms(phone, msg)
 
     return {"message": "Updated successfully"}
+class SessionUpdate(BaseModel):
+    date: str
+    time: str
+    expected_kids: int
+
+@app.patch("/sessions/{session_id}")
+def update_session(session_id: str, update: SessionUpdate):
+    supabase.table("sessions").update({
+        "date": update.date,
+        "time": update.time,
+        "expected_kids": update.expected_kids
+    }).filter("id", "eq", session_id).execute()
+    return {"message": "Session updated successfully"}
+
+@app.options("/sessions/{session_id}")
+def options_session(session_id: str):
+    return {}
