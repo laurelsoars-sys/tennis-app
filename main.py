@@ -48,8 +48,8 @@ def home():
     return {"message": "Tennis app is running!"}
 
 @app.get("/sessions")
-def get_sessions():
-    result = supabase.table("sessions").select("*").execute()
+def get_sessions(limit: int = 5, offset: int = 0):
+    result = supabase.table("sessions").select("*").order("date").limit(limit).offset(offset).execute()
     return result.data
 
 @app.post("/sessions")

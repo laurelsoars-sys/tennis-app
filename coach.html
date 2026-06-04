@@ -21,31 +21,47 @@
     .logout { background: none; color: #666; font-size: 14px; border: 1px solid #ddd; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
     .logout:hover { background: #f0f4f8; }
     .empty { color: #666; font-size: 14px; }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 16px; }
+    .pagination button { width: auto; }
+    .page-info { font-size: 14px; color: #666; }
+    .header-buttons { display: flex; gap: 10px; }
   </style>
 </head>
 <body>
   <div class="header">
     <h1>Coach dashboard</h1>
-    <button onclick="window.location.href='create-session.html'">Create session</button>
-    <button class="logout" onclick="logout()">Sign out</button>
+    <div class="header-buttons">
+      <button onclick="window.location.href='create-session.html'">Create session</button>
+      <button class="logout" onclick="logout()">Sign out</button>
+    </div>
   </div>
   <div id="dashboard"></div>
+  <div class="pagination">
+    <button onclick="changePage(-1)" id="prev-btn" disabled>Previous</button>
+    <span class="page-info" id="page-info">Page 1</span>
+    <button onclick="changePage(1)" id="next-btn">Next</button>
+  </div>
 
   <script>
     const user = JSON.parse(localStorage.getItem('user'));
-    if (!user) {
-      window.location.href = 'index.html';
-    }
+    if (!user) window.location.href = 'index.html';
+
+    const LIMIT = 5;
+    let offset = 0;
+    let page = 1;
 
     async function loadDashboard() {
       try {
-        const sessionsRes = await fetch('https://tennis-app-9esu.onrender.com/sessions');
+        const sessionsRes = await fetch(`https://tennis-app-9esu.onrender.com/sessions?limit=${LIMIT}&offset=${offset}`);
         const sessions = await sessionsRes.json();
-        console.log('sessions:', sessions);
         const dashboard = document.getElementById('dashboard');
 
+        document.getElementById('prev-btn').disabled = offset === 0;
+        document.getElementById('next-btn').disabled = sessions.length < LIMIT;
+        document.getElementById('page-info').textContent = `Page ${page}`;
+
         if (sessions.length === 0) {
-          dashboard.innerHTML = '<p class="empty">No sessions yet.</p>';
+          dashboard.innerHTML = '<p class="empty">No sessions found.</p>';
           return;
         }
 
@@ -53,7 +69,6 @@
         for (const session of sessions) {
           const availRes = await fetch(`https://tennis-app-9esu.onrender.com/availability/${session.id}`);
           const availability = await availRes.json();
-          console.log('availability:', availability);
 
           const assignRes = await fetch(`https://tennis-app-9esu.onrender.com/assignments/${session.id}`);
           const assignments = await assignRes.json();
@@ -89,6 +104,13 @@
         console.error('Dashboard error:', err);
         document.getElementById('dashboard').innerHTML = '<p class="empty">Error loading dashboard.</p>';
       }
+    }
+
+    function changePage(direction) {
+      offset += direction * LIMIT;
+      page += direction;
+      loadDashboard();
+      window.scrollTo(0, 0);
     }
 
     async function approve(sessionId, helperId, btn) {
