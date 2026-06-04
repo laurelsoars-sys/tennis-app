@@ -92,7 +92,7 @@
               <div class="session-header">
                 <div class="session-info">
                   <h2>${session.date}</h2>
-                  <p>${session.time} · ${session.expected_kids} kids expected</p>
+                  <p>${session.time} · ${session.expected_kids} kids expected · ${assignedIds.length} helper${assignedIds.length !== 1 ? 's' : ''} assigned</p>
                 </div>
                 <button style="background:#dc2626" onclick="deleteSession('${session.id}')">Delete</button>
               </div>
