@@ -337,6 +337,7 @@ def get_helpers():
     
     result.sort(key=lambda x: x["full_name"])
     return result
+
 @app.get("/helper-history/{helper_id}")
 def get_helper_history(helper_id: str, filter: str = "upcoming"):
     from datetime import date
@@ -373,4 +374,21 @@ def get_helper_history(helper_id: str, filter: str = "upcoming"):
         })
     
     result.sort(key=lambda x: x["date"])
+    return result
+@app.get("/availability/user/{helper_id}")
+def get_helper_availability(helper_id: str):
+    result = supabase.table("availability").select("*").filter("helper_id", "eq", helper_id).execute()
+    return result.data
+@app.get("/notifications/{helper_id}")
+def get_notifications(helper_id: str):
+    assignments = supabase.table("assignments").select("sessions_id, status").filter("helper_id", "eq", helper_id).filter("status", "eq", "approved").execute()
+    
+    result = []
+    for a in assignments.data:
+        session = supabase.table("sessions").select("date, time").filter("id", "eq", a["sessions_id"]).execute()
+        if session.data:
+            result.append({
+                "message": f"You were approved for {session.data[0]['date']} at {session.data[0]['time']}",
+                "session_id": a["sessions_id"]
+            })
     return result
