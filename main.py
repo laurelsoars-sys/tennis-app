@@ -188,3 +188,21 @@ def get_fairness():
     
     result.sort(key=lambda x: x["rate"])
     return result
+class AssignmentUpdate(BaseModel):
+    status: str
+
+@app.patch("/assignments/{session_id}/{helper_id}")
+def update_assignment(session_id: str, helper_id: str, update: AssignmentUpdate):
+    existing = supabase.table("assignments").select("*").filter("sessions_id", "eq", session_id).filter("helper_id", "eq", helper_id).execute()
+    
+    if len(existing.data) > 0:
+        supabase.table("assignments").update({"status": update.status}).filter("sessions_id", "eq", session_id).filter("helper_id", "eq", helper_id).execute()
+    else:
+        supabase.table("assignments").insert({
+            "sessions_id": session_id,
+            "helper_id": helper_id,
+            "approved_by": "coach",
+            "status": update.status
+        }).execute()
+    
+    return {"message": "Updated successfully"}

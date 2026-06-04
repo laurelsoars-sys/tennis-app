@@ -89,23 +89,53 @@
 
           const assignRes = await fetch(`https://tennis-app-9esu.onrender.com/assignments/${session.id}`);
           const assignments = await assignRes.json();
-          const assignedIds = assignments.map(a => a.helper_id);
+          const assignedIds = assignments.filter(a => a.status === 'approved').map(a => a.helper_id);
 
           const helperRows = availability.length === 0
             ? '<p class="empty">No helpers available yet.</p>'
-            : availability.map(a => `
-                <div class="helper-row">
-                  <span class="helper-name">
-                    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${getColor(a.helper_name)};margin-right:8px;"></span>
-                    ${a.helper_name || a.helper_id}
-                  </span>
-                  <button
-                    class="${assignedIds.includes(a.helper_id) ? 'approved' : ''}"
-                    onclick="approve('${session.id}', '${a.helper_id}', this)">
-                    ${assignedIds.includes(a.helper_id) ? 'Approved' : 'Approve'}
-                  </button>
-                </div>
-              `).join('');
+            : availability.map(a => {
+                const assignment = assignments.find(x => x.helper_id === a.helper_id);
+                const status = assignment ? assignment.status : null;
+
+                let btn = '';
+                if (status === 'approved') {
+                  btn = `
+                    <div style="display:flex;gap:6px;">
+                      <button class="approved" disabled>Approved</button>
+                      <button style="background:#6b7280" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist', this.parentElement)">Undo</button>
+                    </div>`;
+                } else if (status === 'waitlist') {
+                  btn = `
+                    <div style="display:flex;gap:6px;">
+                      <button style="background:#ca8a04" disabled>Waitlisted</button>
+                      <button style="background:#16a34a" onclick="updateStatus('${session.id}', '${a.helper_id}', 'approved', this.parentElement)">Approve</button>
+                      <button style="background:#dc2626" onclick="updateStatus('${session.id}', '${a.helper_id}', 'declined', this.parentElement)">Decline</button>
+                    </div>`;
+                } else if (status === 'declined') {
+                  btn = `
+                    <div style="display:flex;gap:6px;">
+                      <button style="background:#dc2626" disabled>Declined</button>
+                      <button style="background:#6b7280" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist', this.parentElement)">Undo</button>
+                    </div>`;
+                } else {
+                  btn = `
+                    <div style="display:flex;gap:6px;">
+                      <button onclick="updateStatus('${session.id}', '${a.helper_id}', 'approved', this.parentElement)">Approve</button>
+                      <button style="background:#ca8a04" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist', this.parentElement)">Waitlist</button>
+                      <button style="background:#dc2626" onclick="updateStatus('${session.id}', '${a.helper_id}', 'declined', this.parentElement)">Decline</button>
+                    </div>`;
+                }
+
+                return `
+                  <div class="helper-row">
+                    <span class="helper-name">
+                      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${getColor(a.helper_name)};margin-right:8px;"></span>
+                      ${a.helper_name || a.helper_id}
+                    </span>
+                    ${btn}
+                  </div>
+                `;
+              }).join('')
 
           html += `
             <div class="card">
@@ -152,21 +182,16 @@
       });
       loadDashboard();
     }
-    async function approve(sessionId, helperId, btn) {
+    async function updateStatus(sessionId, helperId, status, container) {
       try {
-        await fetch('https://tennis-app-9esu.onrender.com/assignments', {
-          method: 'POST',
+        await fetch(`https://tennis-app-9esu.onrender.com/assignments/${sessionId}/${helperId}`, {
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            session_id: sessionId,
-            helper_id: helperId,
-            approved_by: user.id
-          })
+          body: JSON.stringify({ status: status })
         });
-        btn.textContent = 'Approved';
-        btn.classList.add('approved');
+        loadDashboard();
       } catch (err) {
-        console.error('Approve error:', err);
+        console.error('Update error:', err);
       }
     }
 
