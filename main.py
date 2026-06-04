@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client
 from dotenv import load_dotenv
 from pydantic import BaseModel
+from twilio.rest import Client
 import os
 
 load_dotenv()
@@ -27,6 +28,11 @@ supabase = create_client(
     os.getenv("SUPABASE_KEY")
 )
 
+twilio_client = Client(
+    os.getenv("TWILIO_ACCOUNT_SID"),
+    os.getenv("TWILIO_AUTH_TOKEN")
+)
+TWILIO_PHONE = os.getenv("TWILIO_PHONE")
 
 class Session(BaseModel):
     date: str
@@ -138,6 +144,7 @@ class SignupRequest(BaseModel):
     email: str
     password: str
     full_name: str
+    phone: str
 
 @app.post("/signup")
 def signup(request: SignupRequest):
@@ -151,12 +158,21 @@ def signup(request: SignupRequest):
             "id": user.id,
             "email": request.email,
             "full_name": request.full_name,
-            "role": "helper"
+            "role": "helper",
+            "phone": request.phone
         }).execute()
         return {"message": "Account created successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
+def send_sms(to_phone: str, message: str):
+    try:
+        twilio_client.messages.create(
+            body=message,
+            from_=TWILIO_PHONE,
+            to=to_phone
+        )
+    except Exception as e:
+        print(f"SMS failed: {e}")    
 @app.get("/fairness")
 def get_fairness():
     profiles = supabase.table("profiles").select("id, full_name").filter("role", "eq", "helper").execute()
@@ -207,5 +223,22 @@ def update_assignment(session_id: str, helper_id: str, update: AssignmentUpdate)
             "approved_by": "coach",
             "status": update.status
         }).execute()
-    
+
+    if update.status in ["approved", "waitlist"]:
+        session = supabase.table("sessions").select("date, time").filter("id", "eq", session_id).execute()
+        profile = supabase.table("profiles").select("phone, full_name").filter("id", "eq", helper_id).execute()
+        
+        if session.data and profile.data and profile.data[0].get("phone"):
+            date = session.data[0]["date"]
+            time = session.data[0]["time"]
+            name = profile.data[0]["full_name"]
+            phone = profile.data[0]["phone"]
+            
+            if update.status == "approved":
+                msg = f"Hi {name}! You've been approved for the tennis session on {date} at {time}. See you there!"
+            else:
+                msg = f"Hi {name}! You've been added to the waitlist for the tennis session on {date} at {time}."
+            
+            send_sms(phone, msg)
+
     return {"message": "Updated successfully"}
