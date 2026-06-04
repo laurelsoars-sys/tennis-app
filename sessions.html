@@ -18,7 +18,7 @@
     <div class="header-buttons">
       <div style="position:relative;display:inline-block">
         <button class="btn btn-secondary btn-sm" onclick="toggleNotifications()" id="bell-btn">🔔 <span id="notif-count" style="display:none;background:#dc2626;color:white;border-radius:50%;padding:1px 6px;font-size:11px;margin-left:2px"></span></button>
-        <div id="notif-dropdown" style="display:none;position:absolute;right:0;top:36px;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.12);width:280px;z-index:100;padding:8px 0">
+        <div id="notif-dropdown" style="display:none;position:fixed;right:10px;top:70px;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);width:calc(100vw - 20px);max-width:320px;z-index:1000;padding:8px 0">
           <div id="notif-list" style="max-height:300px;overflow-y:auto"></div>
         </div>
       </div>
@@ -74,13 +74,16 @@
 
     async function markAvailable(sessionId, btn) {
       const alreadyAvailable = btn.dataset.available === 'true';
+      
       if (alreadyAvailable) {
+        if (!confirm('Are you sure you want to withdraw your availability?')) return;
         await fetch(`https://tennis-app-9esu.onrender.com/availability/${sessionId}/${user.id}`, { method: 'DELETE' });
         btn.textContent = "I'm available";
         btn.classList.remove('btn-danger');
         btn.classList.add('btn-primary');
         btn.dataset.available = 'false';
       } else {
+        if (!confirm('Confirm you are available for this session?')) return;
         await fetch('https://tennis-app-9esu.onrender.com/availability', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
