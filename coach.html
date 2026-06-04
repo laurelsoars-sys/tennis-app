@@ -132,11 +132,10 @@
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
                 <div>
                   <h2>${session.date}</h2>
-                  <p class="session-meta">${session.time} &middot; ${session.expected_kids} kids &middot; ${assignedIds.length} assigned</p>
+                  <p class="session-meta">${session.time} &middot; ${session.expected_kids} kids expected${session.notes ? ` &middot; ${session.notes}` : ''}</p>
                 </div>
                 <div class="action-btns">
-                  <button class="btn btn-secondary btn-sm" onclick="window.location.href='edit-session.html?id=${session.id}&date=${session.date}&time=${encodeURIComponent(session.time)}&kids=${session.expected_kids}'">Edit</button>
-                  ${session.status === 'cancelled' 
+                  <button class="btn btn-secondary btn-sm" onclick="window.location.href='edit-session.html?id=${session.id}&date=${session.date}&time=${encodeURIComponent(session.time)}&kids=${session.expected_kids}&notes=${encodeURIComponent(session.notes || '')}'">Edit</button>                  ${session.status === 'cancelled' 
                     ? `<span class="tag tag-red">Cancelled</span>`
                     : `<button class="btn btn-warning btn-sm" onclick="cancelSession('${session.id}')">Cancel</button>`
                   }

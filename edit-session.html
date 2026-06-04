@@ -28,6 +28,8 @@
     <input type="text" id="time" placeholder="e.g. 5:00 PM" />
     <label>Expected number of kids</label>
     <input type="number" id="kids" placeholder="e.g. 18" />
+    <label>Notes (optional)</label>
+    <input type="text" id="notes" placeholder="e.g. Bring extra balls, outdoor court 3" />
     <button onclick="saveSession()">Save changes</button>
     <div class="success" id="success"></div>
     <div class="error" id="error"></div>
@@ -37,15 +39,17 @@
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user || user.role !== 'coach') window.location.href = 'index.html';
 
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get('id');
-    const date = params.get('date');
-    const time = params.get('time');
-    const kids = params.get('kids');
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('id');
+      const date = params.get('date');
+      const time = params.get('time');
+      const kids = params.get('kids');
+      const notes = params.get('notes');
 
-    document.getElementById('date').value = date || '';
-    document.getElementById('time').value = time || '';
-    document.getElementById('kids').value = kids || '';
+      document.getElementById('date').value = date || '';
+      document.getElementById('time').value = time || '';
+      document.getElementById('kids').value = kids || '';
+      document.getElementById('notes').value = notes || '';
 
     async function saveSession() {
       const newDate = document.getElementById('date').value;
@@ -64,7 +68,8 @@
           body: JSON.stringify({
             date: newDate,
             time: newTime,
-            expected_kids: parseInt(newKids)
+            expected_kids: parseInt(newKids),
+            notes: document.getElementById('notes').value
           })
         });
 

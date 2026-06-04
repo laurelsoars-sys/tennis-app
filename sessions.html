@@ -43,7 +43,7 @@
             <div style="display:flex;justify-content:space-between;align-items:center">
               <div>
                 <h2>${session.date}</h2>
-                <p class="session-meta">${session.time} &middot; ${session.expected_kids} kids expected</p>
+                <p class="session-meta">${session.time} &middot; ${session.expected_kids} kids expected${session.notes ? ` &middot; ${session.notes}` : ''}</p>
               </div>
               ${session.status === 'cancelled'
                 ? `<span class="tag tag-red">Cancelled</span>`

@@ -132,7 +132,8 @@
               date: d,
               time: time,
               expected_kids: parseInt(kids),
-              created_by: user.id
+              created_by: user.id,
+              notes: document.getElementById('notes').value
             })
           });
           if (response.ok) created++;

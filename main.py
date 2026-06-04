@@ -63,13 +63,21 @@ def get_sessions(limit: int = 5, offset: int = 0):
     result = supabase.table("sessions").select("*").order("date").execute()
     return result.data[offset:offset+limit]
 
+class Session(BaseModel):
+    date: str
+    time: str
+    expected_kids: int
+    created_by: str
+    notes: str = ""
+
 @app.post("/sessions")
 def create_session(session: Session):
     result = supabase.table("sessions").insert({
         "date": session.date,
         "time": session.time,
         "expected_kids": session.expected_kids,
-        "created_by": session.created_by
+        "created_by": session.created_by,
+        "notes": session.notes
     }).execute()
     return result.data
 
@@ -246,13 +254,15 @@ class SessionUpdate(BaseModel):
     date: str
     time: str
     expected_kids: int
+    notes: str = ""
 
 @app.patch("/sessions/{session_id}")
 def update_session(session_id: str, update: SessionUpdate):
     supabase.table("sessions").update({
         "date": update.date,
         "time": update.time,
-        "expected_kids": update.expected_kids
+        "expected_kids": update.expected_kids,
+        "notes": update.notes
     }).filter("id", "eq", session_id).execute()
     return {"message": "Session updated successfully"}
 
