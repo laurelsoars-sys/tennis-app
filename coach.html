@@ -55,7 +55,23 @@
       try {
         const sessionsRes = await fetch(`https://tennis-app-9esu.onrender.com/sessions?limit=${LIMIT}&offset=${offset}`);
         const sessions = await sessionsRes.json();
+        const fairnessRes = await fetch('https://tennis-app-9esu.onrender.com/fairness');
+        const fairness = await fairnessRes.json();
         const dashboard = document.getElementById('dashboard');
+
+        const counts = {};
+        fairness.forEach(h => counts[h.name] = h.sessions);
+        const values = Object.values(counts);
+        const max = Math.max(...values, 1);
+        const min = Math.min(...values, 0);
+        const mid = (max + min) / 2;
+
+        function getColor(name) {
+          const count = counts[name] ?? 0;
+          if (count <= min + (mid - min) / 2) return '#16a34a';
+          if (count <= mid) return '#ca8a04';
+          return '#dc2626';
+        }
 
         document.getElementById('prev-btn').disabled = offset === 0;
         document.getElementById('next-btn').disabled = sessions.length < LIMIT;
@@ -79,7 +95,10 @@
             ? '<p class="empty">No helpers available yet.</p>'
             : availability.map(a => `
                 <div class="helper-row">
-                  <span class="helper-name">${a.helper_name || a.helper_id}</span>
+                  <span class="helper-name">
+                    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${getColor(a.helper_name)};margin-right:8px;"></span>
+                    ${a.helper_name || a.helper_id}
+                  </span>
                   <button
                     class="${assignedIds.includes(a.helper_id) ? 'approved' : ''}"
                     onclick="approve('${session.id}', '${a.helper_id}', this)">
@@ -101,6 +120,18 @@
             </div>
           `;
         }
+
+        html += `
+          <div class="card" style="padding:12px 20px;">
+            <p style="margin:0;font-size:13px;color:#666;font-weight:500;">Fairness key</p>
+            <div style="display:flex;gap:20px;margin-top:8px;font-size:13px;color:#444;">
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#16a34a;margin-right:6px;"></span>Fewest sessions</span>
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ca8a04;margin-right:6px;"></span>Average</span>
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dc2626;margin-right:6px;"></span>Most sessions</span>
+            </div>
+          </div>
+        `;
+
         dashboard.innerHTML = html;
       } catch (err) {
         console.error('Dashboard error:', err);
