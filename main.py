@@ -351,7 +351,6 @@ def get_helper_history(helper_id: str, filter: str = "upcoming"):
         return []
     
     sessions = supabase.table("sessions").select("*").execute()
-    
     assignments = supabase.table("assignments").select("sessions_id, status").filter("helper_id", "eq", helper_id).execute()
     assign_map = {a["sessions_id"]: a["status"] for a in assignments.data}
     
@@ -369,12 +368,14 @@ def get_helper_history(helper_id: str, filter: str = "upcoming"):
             "time": session["time"],
             "expected_kids": session["expected_kids"],
             "notes": session.get("notes", ""),
+            "session_status": session.get("status", "active"),
             "status": assign_map.get(session["id"], None),
             "availability": avail_map.get(session["id"], None)
         })
     
     result.sort(key=lambda x: x["date"])
     return result
+
 @app.get("/availability/user/{helper_id}")
 def get_helper_availability(helper_id: str):
     result = supabase.table("availability").select("*").filter("helper_id", "eq", helper_id).execute()
