@@ -248,21 +248,24 @@ def update_assignment(session_id: str, helper_id: str, update: AssignmentUpdate)
         }).execute()
 
     if update.status in ["approved", "waitlist"]:
-        session = supabase.table("sessions").select("date, time").filter("id", "eq", session_id).execute()
-        profile = supabase.table("profiles").select("phone, full_name").filter("id", "eq", helper_id).execute()
-        
-        if session.data and profile.data and profile.data[0].get("phone"):
-            date = session.data[0]["date"]
-            time = session.data[0]["time"]
-            name = profile.data[0]["full_name"]
-            phone = profile.data[0]["phone"]
+        try:
+            session = supabase.table("sessions").select("date, time").filter("id", "eq", session_id).execute()
+            profile = supabase.table("profiles").select("phone, full_name").filter("id", "eq", helper_id).execute()
             
-            if update.status == "approved":
-                msg = f"Hi {name}! You've been approved for the tennis session on {date} at {time}. See you there!"
-            else:
-                msg = f"Hi {name}! You've been added to the waitlist for the tennis session on {date} at {time}."
-            
-            send_sms(phone, msg)
+            if session.data and profile.data and profile.data[0].get("phone"):
+                date = session.data[0]["date"]
+                time = session.data[0]["time"]
+                name = profile.data[0]["full_name"]
+                phone = profile.data[0]["phone"]
+                
+                if update.status == "approved":
+                    msg = f"Hi {name}! You've been approved for the tennis session on {date} at {time}. See you there!"
+                else:
+                    msg = f"Hi {name}! You've been added to the waitlist for the tennis session on {date} at {time}."
+                
+                send_sms(phone, msg)
+        except Exception as e:
+            print(f"Notification error: {e}")
 
     return {"message": "Updated successfully"}
 class SessionUpdate(BaseModel):
