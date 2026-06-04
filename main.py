@@ -122,3 +122,9 @@ def login(request: LoginRequest):
 def withdraw_availability(session_id: str, helper_id: str):
     result = supabase.table("availability").delete().filter("session_id", "eq", session_id).filter("helper_id", "eq", helper_id).execute()
     return {"message": "Withdrawn successfully"}
+@app.delete("/sessions/{session_id}")
+def delete_session(session_id: str):
+    supabase.table("assignments").delete().filter("sessions_id", "eq", session_id).execute()
+    supabase.table("availability").delete().filter("session_id", "eq", session_id).execute()
+    supabase.table("sessions").delete().filter("id", "eq", session_id).execute()
+    return {"message": "Session deleted successfully"}

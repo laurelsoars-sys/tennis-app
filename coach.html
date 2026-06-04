@@ -94,6 +94,7 @@
                   <h2>${session.date}</h2>
                   <p>${session.time} · ${session.expected_kids} kids expected</p>
                 </div>
+                <button style="background:#dc2626" onclick="deleteSession('${session.id}')">Delete</button>
               </div>
               ${helperRows}
             </div>
@@ -112,7 +113,13 @@
       loadDashboard();
       window.scrollTo(0, 0);
     }
-
+    async function deleteSession(sessionId) {
+      if (!confirm('Are you sure you want to delete this session?')) return;
+      await fetch(`https://tennis-app-9esu.onrender.com/sessions/${sessionId}`, {
+        method: 'DELETE'
+      });
+      loadDashboard();
+    }
     async function approve(sessionId, helperId, btn) {
       try {
         await fetch('https://tennis-app-9esu.onrender.com/assignments', {
@@ -135,7 +142,7 @@
       localStorage.removeItem('user');
       window.location.href = 'index.html';
     }
-
+    
     loadDashboard();
   </script>
 </body>
