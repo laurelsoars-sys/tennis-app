@@ -139,6 +139,7 @@
                     ? `<span class="tag tag-red">Cancelled</span>`
                     : `<button class="btn btn-warning btn-sm" onclick="cancelSession('${session.id}')">Cancel</button>`
                   }
+                  <button class="btn btn-secondary btn-sm" onclick="window.location.href='attendance.html?id=${session.id}&date=${session.date}&time=${encodeURIComponent(session.time)}'">Attendance</button>
                   <button class="btn btn-danger btn-sm" onclick="deleteSession('${session.id}')">Delete</button>
                 </div>
               </div>

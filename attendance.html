@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body style="padding:20px">
+  <div class="page-header">
+    <div class="logo">
+      <div class="logo-icon">🎾</div>
+      <div>
+        <div class="logo-text">Attendance</div>
+        <div class="logo-sub" id="session-info"></div>
+      </div>
+    </div>
+    <div class="header-buttons">
+      <button class="btn btn-secondary btn-sm" onclick="window.location.href='coach.html'">Back to dashboard</button>
+    </div>
+  </div>
+
+  <div id="attendance-list"></div>
+  <div class="court-lines"></div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || user.role !== 'coach') window.location.href = 'index.html';
+
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('id');
+    const date = params.get('date');
+    const time = params.get('time');
+
+    document.getElementById('session-info').textContent = `${date} at ${time}`;
+
+    async function loadAttendance() {
+      try {
+        const assignRes = await fetch(`https://tennis-app-9esu.onrender.com/assignments/${sessionId}`);
+        const assignments = await assignRes.json();
+        const approved = assignments.filter(a => a.status === 'approved');
+
+        const attendRes = await fetch(`https://tennis-app-9esu.onrender.com/attendance/${sessionId}`);
+        const attendance = await attendRes.json();
+        const attendMap = {};
+        attendance.forEach(a => attendMap[a.helper_id] = a.showed_up);
+
+        const availRes = await fetch(`https://tennis-app-9esu.onrender.com/availability/${sessionId}`);
+        const availability = await availRes.json();
+        const nameMap = {};
+        availability.forEach(a => nameMap[a.helper_id] = a.helper_name);
+
+        const list = document.getElementById('attendance-list');
+
+        if (approved.length === 0) {
+          list.innerHTML = '<p class="empty">No approved helpers for this session.</p>';
+          return;
+        }
+
+        list.innerHTML = `
+          <div class="card-wide">
+            ${approved.map(a => {
+              const showed = attendMap[a.helper_id];
+              return `
+                <div class="helper-row">
+                  <span class="helper-name">${nameMap[a.helper_id] || a.helper_id}</span>
+                  <div class="action-btns">
+                    <button class="btn btn-sm ${showed === true ? 'btn-approved' : 'btn-secondary'}" onclick="markAttendance('${a.helper_id}', true)">Showed up</button>
+                    <button class="btn btn-sm ${showed === false ? 'btn-danger' : 'btn-secondary'}" onclick="markAttendance('${a.helper_id}', false)">No show</button>
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>`;
+      } catch (err) {
+        document.getElementById('attendance-list').innerHTML = '<p class="empty">Error loading attendance.</p>';
+      }
+    }
+
+    async function markAttendance(helperId, showedUp) {
+      await fetch('https://tennis-app-9esu.onrender.com/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          helper_id: helperId,
+          showed_up: showedUp
+        })
+      });
+      loadAttendance();
+    }
+
+    loadAttendance();
+  </script>
+</body>
+</html>

@@ -277,3 +277,34 @@ def cancel_session(session_id: str):
 @app.options("/sessions/{session_id}/cancel")
 def options_cancel(session_id: str):
     return {}
+class Attendance(BaseModel):
+    session_id: str
+    helper_id: str
+    showed_up: bool = True
+    notes: str = ""
+
+@app.get("/attendance/{session_id}")
+def get_attendance(session_id: str):
+    result = supabase.table("attendance").select("*").filter("session_id", "eq", session_id).execute()
+    return result.data
+
+@app.post("/attendance")
+def mark_attendance(attendance: Attendance):
+    existing = supabase.table("attendance").select("*").filter("session_id", "eq", attendance.session_id).filter("helper_id", "eq", attendance.helper_id).execute()
+    if len(existing.data) > 0:
+        supabase.table("attendance").update({
+            "showed_up": attendance.showed_up,
+            "notes": attendance.notes
+        }).filter("session_id", "eq", attendance.session_id).filter("helper_id", "eq", attendance.helper_id).execute()
+    else:
+        supabase.table("attendance").insert({
+            "session_id": attendance.session_id,
+            "helper_id": attendance.helper_id,
+            "showed_up": attendance.showed_up,
+            "notes": attendance.notes
+        }).execute()
+    return {"message": "Attendance recorded"}
+
+@app.options("/attendance")
+def options_attendance():
+    return {}
