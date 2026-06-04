@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My History</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body style="padding:20px">
+  <div class="page-header">
+    <div class="logo">
+      <div class="logo-icon">🎾</div>
+      <div>
+        <div class="logo-text">My sessions</div>
+        <div class="logo-sub" id="welcome"></div>
+      </div>
+    </div>
+    <div class="header-buttons">
+      <button class="btn btn-secondary btn-sm" onclick="window.location.href='sessions.html'">Back</button>
+    </div>
+  </div>
+
+  <div class="tabs" style="display:flex;gap:4px;margin-bottom:20px;background:#f0f4f0;padding:4px;border-radius:12px;width:fit-content">
+    <button id="tab-upcoming" style="padding:8px 20px;border-radius:9px;border:none;font-size:14px;font-weight:500;cursor:pointer;background:white;color:#16a34a;box-shadow:0 1px 4px rgba(0,0,0,0.08)" onclick="switchTab('upcoming')">Upcoming</button>
+    <button id="tab-past" style="padding:8px 20px;border-radius:9px;border:none;font-size:14px;font-weight:500;cursor:pointer;background:none;color:#666" onclick="switchTab('past')">Past</button>
+  </div>
+
+  <div id="history-list"></div>
+  <div class="court-lines"></div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) window.location.href = 'index.html';
+    document.getElementById('welcome').textContent = `Hi ${user.full_name}!`;
+
+    async function loadHistory(filter = 'upcoming') {
+      try {
+        const response = await fetch(`https://tennis-app-9esu.onrender.com/helper-history/${user.id}?filter=${filter}`);
+        const sessions = await response.json();
+        const list = document.getElementById('history-list');
+
+        if (sessions.length === 0) {
+          list.innerHTML = `<p class="empty">No ${filter} sessions found.</p>`;
+          return;
+        }
+
+        list.innerHTML = sessions.map(s => `
+          <div class="card-wide">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <h2>${s.date}</h2>
+                <p class="session-meta">${s.time} &middot; ${s.expected_kids} kids${s.notes ? ` &middot; ${s.notes}` : ''}</p>
+              </div>
+              <div>
+                ${s.status === 'approved' ? '<span class="tag tag-green">Approved</span>'
+                  : s.status === 'waitlist' ? '<span class="tag tag-yellow">Waitlisted</span>'
+                  : s.status === 'declined' ? '<span class="tag tag-red">Declined</span>'
+                  : s.availability === 'available' ? '<span class="tag tag-gray">Pending</span>'
+                  : '<span class="tag tag-gray">Available</span>'}
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        document.getElementById('history-list').innerHTML = '<p class="empty">Error loading history.</p>';
+      }
+    }
+
+    function switchTab(tab) {
+      document.getElementById('tab-upcoming').style.background = tab === 'upcoming' ? 'white' : 'none';
+      document.getElementById('tab-upcoming').style.color = tab === 'upcoming' ? '#16a34a' : '#666';
+      document.getElementById('tab-past').style.background = tab === 'past' ? 'white' : 'none';
+      document.getElementById('tab-past').style.color = tab === 'past' ? '#16a34a' : '#666';
+      loadHistory(tab);
+    }
+
+    loadHistory();
+  </script>
+</body>
+</html>

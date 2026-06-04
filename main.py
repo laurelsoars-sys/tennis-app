@@ -337,3 +337,40 @@ def get_helpers():
     
     result.sort(key=lambda x: x["full_name"])
     return result
+@app.get("/helper-history/{helper_id}")
+def get_helper_history(helper_id: str, filter: str = "upcoming"):
+    from datetime import date
+    today = date.today().isoformat()
+    
+    availability = supabase.table("availability").select("session_id, status").filter("helper_id", "eq", helper_id).execute()
+    session_ids = [a["session_id"] for a in availability.data]
+    avail_map = {a["session_id"]: a["status"] for a in availability.data}
+    
+    if not session_ids:
+        return []
+    
+    sessions = supabase.table("sessions").select("*").execute()
+    
+    assignments = supabase.table("assignments").select("sessions_id, status").filter("helper_id", "eq", helper_id).execute()
+    assign_map = {a["sessions_id"]: a["status"] for a in assignments.data}
+    
+    result = []
+    for session in sessions.data:
+        if session["id"] not in session_ids:
+            continue
+        if filter == "upcoming" and session["date"] < today:
+            continue
+        if filter == "past" and session["date"] >= today:
+            continue
+        result.append({
+            "id": session["id"],
+            "date": session["date"],
+            "time": session["time"],
+            "expected_kids": session["expected_kids"],
+            "notes": session.get("notes", ""),
+            "status": assign_map.get(session["id"], None),
+            "availability": avail_map.get(session["id"], None)
+        })
+    
+    result.sort(key=lambda x: x["date"])
+    return result
