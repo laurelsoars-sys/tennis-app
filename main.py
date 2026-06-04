@@ -317,3 +317,23 @@ def mark_attendance(attendance: Attendance):
 @app.options("/attendance")
 def options_attendance():
     return {}
+@app.get("/helpers")
+def get_helpers():
+    profiles = supabase.table("profiles").select("id, full_name, email").filter("role", "eq", "helper").execute()
+    assignments = supabase.table("assignments").select("helper_id").filter("status", "eq", "approved").execute()
+    
+    counts = {}
+    for a in assignments.data:
+        hid = a["helper_id"]
+        counts[hid] = counts.get(hid, 0) + 1
+    
+    result = []
+    for p in profiles.data:
+        result.append({
+            "full_name": p["full_name"],
+            "email": p["email"],
+            "sessions_assigned": counts.get(p["id"], 0)
+        })
+    
+    result.sort(key=lambda x: x["full_name"])
+    return result

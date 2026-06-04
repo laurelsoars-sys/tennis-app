@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helpers</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body style="padding:20px">
+  <div class="page-header">
+    <div class="logo">
+      <div class="logo-icon">🎾</div>
+      <div>
+        <div class="logo-text">All helpers</div>
+        <div class="logo-sub">Everyone registered in the system</div>
+      </div>
+    </div>
+    <div class="header-buttons">
+      <button class="btn btn-secondary btn-sm" onclick="window.location.href='coach.html'">Back to dashboard</button>
+    </div>
+  </div>
+
+  <div id="helpers-list"></div>
+  <div class="court-lines"></div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || user.role !== 'coach') window.location.href = 'index.html';
+
+    async function loadHelpers() {
+      try {
+        const response = await fetch('https://tennis-app-9esu.onrender.com/helpers');
+        const helpers = await response.json();
+        const list = document.getElementById('helpers-list');
+
+        if (helpers.length === 0) {
+          list.innerHTML = '<p class="empty">No helpers registered yet.</p>';
+          return;
+        }
+
+        list.innerHTML = `
+          <div class="card-wide">
+            ${helpers.map(h => `
+              <div class="helper-row">
+                <div>
+                  <span class="helper-name">${h.full_name}</span>
+                  <p style="font-size:13px;color:#666;margin-top:2px">${h.email}</p>
+                </div>
+                <div style="text-align:right">
+                  <span class="tag tag-green">${h.sessions_assigned} sessions</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>`;
+      } catch (err) {
+        document.getElementById('helpers-list').innerHTML = '<p class="empty">Error loading helpers.</p>';
+      }
+    }
+
+    loadHelpers();
+  </script>
+</body>
+</html>
