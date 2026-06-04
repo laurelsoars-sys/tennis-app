@@ -60,16 +60,16 @@
         const dashboard = document.getElementById('dashboard');
 
         const counts = {};
-        fairness.forEach(h => counts[h.name] = h.sessions);
+        fairness.forEach(h => counts[h.name] = h.rate);
         const values = Object.values(counts);
         const max = Math.max(...values, 1);
         const min = Math.min(...values, 0);
         const mid = (max + min) / 2;
 
         function getColor(name) {
-          const count = counts[name] ?? 0;
-          if (count <= min + (mid - min) / 2) return '#16a34a';
-          if (count <= mid) return '#ca8a04';
+          const rate = counts[name] ?? 0;
+          if (rate <= min + (mid - min) / 2) return '#16a34a';
+          if (rate <= mid) return '#ca8a04';
           return '#dc2626';
         }
 

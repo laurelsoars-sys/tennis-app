@@ -161,18 +161,30 @@ def signup(request: SignupRequest):
 def get_fairness():
     profiles = supabase.table("profiles").select("id, full_name").filter("role", "eq", "helper").execute()
     assignments = supabase.table("assignments").select("helper_id").execute()
+    availability = supabase.table("availability").select("helper_id").execute()
     
-    counts = {}
-    for assignment in assignments.data:
-        hid = assignment["helper_id"]
-        counts[hid] = counts.get(hid, 0) + 1
+    assignment_counts = {}
+    for a in assignments.data:
+        hid = a["helper_id"]
+        assignment_counts[hid] = assignment_counts.get(hid, 0) + 1
+    
+    availability_counts = {}
+    for a in availability.data:
+        hid = a["helper_id"]
+        availability_counts[hid] = availability_counts.get(hid, 0) + 1
     
     result = []
     for profile in profiles.data:
+        pid = profile["id"]
+        assigned = assignment_counts.get(pid, 0)
+        available = availability_counts.get(pid, 0)
+        rate = round((assigned / available) * 100) if available > 0 else 0
         result.append({
             "name": profile["full_name"],
-            "sessions": counts.get(profile["id"], 0)
+            "sessions": assigned,
+            "available": available,
+            "rate": rate
         })
     
-    result.sort(key=lambda x: x["sessions"])
+    result.sort(key=lambda x: x["rate"])
     return result

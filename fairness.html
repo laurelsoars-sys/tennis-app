@@ -44,16 +44,16 @@
           return;
         }
 
-        const max = Math.max(...data.map(h => h.sessions), 1);
+        const max = Math.max(...data.map(h => h.rate), 1);
 
         list.innerHTML = data.map(helper => `
-          <div class="helper-row">
+        <div class="helper-row">
             <span class="helper-name">${helper.name}</span>
             <div class="bar-container">
-              <div class="bar" style="width:${(helper.sessions / max) * 100}%"></div>
+            <div class="bar" style="width:${(helper.rate / max) * 100}%"></div>
             </div>
-            <span class="count">${helper.sessions} session${helper.sessions !== 1 ? 's' : ''}</span>
-          </div>
+            <span class="count">${helper.rate}% (${helper.sessions}/${helper.available})</span>
+        </div>
         `).join('');
       } catch (err) {
         document.getElementById('fairness-list').innerHTML = '<p class="empty">Cannot reach server.</p>';
