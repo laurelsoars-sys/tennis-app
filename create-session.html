@@ -16,18 +16,52 @@
     .back:hover { background: #f0f4f8; color: #1a1a1a; }
     .success { color: green; font-size: 14px; margin-top: 12px; text-align: center; }
     .error { color: red; font-size: 14px; margin-top: 12px; text-align: center; }
+    .days-section { margin-bottom: 16px; }
+    .days-section p { font-size: 14px; color: #444; margin: 0 0 8px; }
+    .days-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 8px; }
+    .day-btn { padding: 8px 4px; background: #f0f4f8; color: #444; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; cursor: pointer; text-align: center; }
+    .day-btn.selected { background: #2563eb; color: white; border-color: #2563eb; }
+    .weeks-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .weeks-row label { margin: 0; white-space: nowrap; }
+    .weeks-row input { margin: 0; width: 70px; }
+    .divider { border: none; border-top: 1px solid #eee; margin: 16px 0; }
   </style>
 </head>
 <body>
   <div class="card">
     <button class="back" onclick="window.location.href='coach.html'">Back to dashboard</button>
     <h1>Create session</h1>
-    <label>Date</label>
+
+    <label>Start date</label>
     <input type="date" id="date" />
+
     <label>Time</label>
     <input type="text" id="time" placeholder="e.g. 5:00 PM" />
+
     <label>Expected number of kids</label>
     <input type="number" id="kids" placeholder="e.g. 18" />
+
+    <hr class="divider">
+
+    <div class="days-section">
+      <p>Repeat on these days</p>
+      <div class="days-grid">
+        <div class="day-btn" onclick="toggleDay(this, 0)">Sun</div>
+        <div class="day-btn" onclick="toggleDay(this, 1)">Mon</div>
+        <div class="day-btn" onclick="toggleDay(this, 2)">Tue</div>
+        <div class="day-btn" onclick="toggleDay(this, 3)">Wed</div>
+        <div class="day-btn" onclick="toggleDay(this, 4)">Thu</div>
+        <div class="day-btn" onclick="toggleDay(this, 5)">Fri</div>
+        <div class="day-btn" onclick="toggleDay(this, 6)">Sat</div>
+      </div>
+    </div>
+
+    <div class="weeks-row">
+      <label>Repeat for</label>
+      <input type="number" id="weeks" value="1" min="1" max="12" />
+      <label>weeks</label>
+    </div>
+
     <button onclick="createSession()">Create session</button>
     <div class="success" id="success"></div>
     <div class="error" id="error"></div>
@@ -37,37 +71,80 @@
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user || user.role !== 'coach') window.location.href = 'index.html';
 
+    const selectedDays = new Set();
+
+    function toggleDay(btn, day) {
+      if (selectedDays.has(day)) {
+        selectedDays.delete(day);
+        btn.classList.remove('selected');
+      } else {
+        selectedDays.add(day);
+        btn.classList.add('selected');
+      }
+    }
+
+    function getDatesForDays(startDate, days, weeks) {
+      const dates = [];
+      const start = new Date(startDate);
+      start.setDate(start.getDate() + 1);
+
+      for (let w = 0; w < weeks; w++) {
+        for (let d = 0; d < 7; d++) {
+          const date = new Date(start);
+          date.setDate(start.getDate() + (w * 7) + d);
+          if (days.has(date.getDay())) {
+            dates.push(date.toISOString().split('T')[0]);
+          }
+        }
+      }
+      return dates;
+    }
+
     async function createSession() {
       const date = document.getElementById('date').value;
       const time = document.getElementById('time').value;
       const kids = document.getElementById('kids').value;
+      const weeks = parseInt(document.getElementById('weeks').value);
 
       if (!date || !time || !kids) {
         document.getElementById('error').textContent = 'Please fill in all fields.';
         return;
       }
 
-      try {
-        const response = await fetch('https://laurelsoars-sys.github.io/tennis-app//sessions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            date: date,
-            time: time,
-            expected_kids: parseInt(kids),
-            created_by: user.id
-          })
-        });
+      document.getElementById('error').textContent = '';
+      document.getElementById('success').textContent = '';
 
-        if (response.ok) {
-          document.getElementById('success').textContent = 'Session created successfully!';
-          document.getElementById('error').textContent = '';
-          document.getElementById('date').value = '';
-          document.getElementById('time').value = '';
-          document.getElementById('kids').value = '';
-        } else {
-          document.getElementById('error').textContent = 'Failed to create session.';
+      let dates = [];
+
+      if (selectedDays.size > 0) {
+        dates = getDatesForDays(date, selectedDays, weeks);
+      } else {
+        dates = [date];
+      }
+
+      try {
+        let created = 0;
+        for (const d of dates) {
+          const response = await fetch('https://laurelsoars-sys.github.io/tennis-app/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              date: d,
+              time: time,
+              expected_kids: parseInt(kids),
+              created_by: user.id
+            })
+          });
+          if (response.ok) created++;
         }
+
+        document.getElementById('success').textContent = `${created} session${created > 1 ? 's' : ''} created successfully!`;
+        document.getElementById('date').value = '';
+        document.getElementById('time').value = '';
+        document.getElementById('kids').value = '';
+        selectedDays.clear();
+        document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'));
+
       } catch (err) {
         document.getElementById('error').textContent = 'Cannot reach server.';
       }
