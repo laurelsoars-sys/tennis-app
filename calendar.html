@@ -88,7 +88,7 @@
         allSessions = await sessionsRes.json();
 
         if (user.role !== 'coach') {
-          const availRes = await fetch(`https://tennis-app-9esu.onrender.com/availability/user/${user.id}`);
+          const availRes = await fetch(`https://tennis-app-9esu.onrender.com/my-availability/${user.id}`);
           const myAvail = await availRes.json();
           const mySessionIds = new Set(myAvail.map(a => a.session_id));
           const assignRes = await fetch(`https://tennis-app-9esu.onrender.com/helper-history/${user.id}?filter=upcoming`);

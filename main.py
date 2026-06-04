@@ -106,7 +106,10 @@ def get_availability(session_id: str):
         record["helper_name"] = profile_map.get(record["helper_id"], "Unknown helper")
     
     return availability
-
+@app.get("/my-availability/{helper_id}")
+def get_my_availability(helper_id: str):
+    result = supabase.table("availability").select("*").filter("helper_id", "eq", helper_id).execute()
+    return result.data
 @app.post("/availability")
 def mark_availability(availability: Availability):
     existing = supabase.table("availability").select("*").filter("session_id", "eq", availability.session_id).filter("helper_id", "eq", availability.helper_id).execute()

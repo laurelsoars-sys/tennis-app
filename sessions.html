@@ -62,7 +62,7 @@
         const sessions = await response.json();
         const list = document.getElementById('sessions-list');
 
-        const availRes = await fetch(`https://tennis-app-9esu.onrender.com/availability/user/${user.id}`);
+        const availRes = await fetch(`https://tennis-app-9esu.onrender.com/my-availability/${user.id}`);
         const myAvailability = await availRes.json();
         const respondedSessionIds = new Set(myAvailability.map(a => a.session_id));
 
