@@ -83,24 +83,23 @@
     }
 
     async function loadCalendarData() {
-      try {
-        const sessionsRes = await fetch('https://tennis-app-9esu.onrender.com/sessions?limit=100&offset=0&filter=upcoming');
-        allSessions = await sessionsRes.json();
+        try {
+            const sessionsRes = await fetch('https://tennis-app-9esu.onrender.com/sessions?limit=100&offset=0&filter=upcoming');
+            allSessions = await sessionsRes.json();
 
-        if (user.role !== 'coach') {
-          const availRes = await fetch(`https://tennis-app-9esu.onrender.com/my-availability/${user.id}`);
-          const myAvail = await availRes.json();
-          const mySessionIds = new Set(myAvail.map(a => a.session_id));
-          const assignRes = await fetch(`https://tennis-app-9esu.onrender.com/helper-history/${user.id}?filter=upcoming`);
-          const myHistory = await assignRes.json();
-          myHistory.forEach(s => mySessionIds.add(s.id));
-          mySessions = mySessionIds;
+            if (user.role !== 'coach') {
+            const historyRes = await fetch(`https://tennis-app-9esu.onrender.com/helper-history/${user.id}?filter=upcoming`);
+            const history = await historyRes.json();
+            
+            history.forEach(s => {
+                mySessions.set(s.id, s.status || s.availability);
+            });
+            }
+
+            renderCalendar();
+        } catch (err) {
+            console.error('Calendar error:', err);
         }
-
-        renderCalendar();
-      } catch (err) {
-        console.error('Calendar error:', err);
-      }
     }
 
     function renderCalendar() {
@@ -143,11 +142,12 @@
         const isCancelled = sessions.every(s => s.status === 'cancelled');
 
         const dots = sessions.map(s => {
-          const isMine = mySessions.has(s.id);
-          const isCancelled = s.status === 'cancelled';
-          return `<span class="cal-dot ${isCancelled ? 'cancelled' : isMine ? 'my-session' : ''}"></span>`;
+            const myStatus = mySessions.get(s.id);
+            const isCancelled = s.status === 'cancelled';
+            const isApproved = myStatus === 'approved';
+            const isResponded = myStatus !== undefined;
+            return `<span class="cal-dot ${isCancelled ? 'cancelled' : isApproved ? 'my-session' : ''}"></span>`;
         }).join('');
-
         cells.push(`
           <div class="cal-day ${hasSessions ? (isCancelled ? 'cancelled' : 'has-session') : ''} ${isToday ? 'today' : ''}"
             ${hasSessions ? `onclick="showSessions('${dateStr}')"` : ''}>
@@ -204,10 +204,17 @@
                     <p class="session-meta">${s.expected_kids} kids expected${s.notes ? ` &middot; ${s.notes}` : ''}</p>
                 </div>
                 ${s.status === 'cancelled'
-                    ? '<span class="tag tag-red">Cancelled</span>'
-                    : mySessions.has(s.id)
-                    ? '<span class="tag tag-green">Responding</span>'
-                    : '<span class="tag tag-gray">No response</span>'}
+                ? '<span class="tag tag-red">Cancelled</span>'
+                : (() => {
+                    const myStatus = mySessions.get(s.id);
+                    if (myStatus === 'approved') return '<span class="tag tag-green">Approved</span>';
+                    if (myStatus === 'waitlist') return '<span class="tag tag-yellow">Waitlisted</span>';
+                    if (myStatus === 'declined') return '<span class="tag tag-red">Declined</span>';
+                    if (myStatus === 'available') return '<span class="tag tag-gray">Pending</span>';
+                    if (myStatus === 'unavailable') return '<span class="tag tag-red">Not available</span>';
+                    return '<span class="tag tag-gray">No response</span>';
+                    })()
+                }
                 </div>
                 ${helpersHtml}
             </div>`;
