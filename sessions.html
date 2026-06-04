@@ -45,7 +45,10 @@
                 <h2>${session.date}</h2>
                 <p class="session-meta">${session.time} &middot; ${session.expected_kids} kids expected</p>
               </div>
-              <button class="btn btn-primary btn-sm" id="btn-${session.id}" data-available="false" onclick="markAvailable('${session.id}', this)">I'm available</button>
+              ${session.status === 'cancelled'
+                ? `<span class="tag tag-red">Cancelled</span>`
+                : `<button class="btn btn-primary btn-sm" id="btn-${session.id}" data-available="false" onclick="markAvailable('${session.id}', this)">I'm available</button>`
+              }
             </div>
           </div>
         `).join('');

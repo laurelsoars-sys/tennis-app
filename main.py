@@ -259,3 +259,11 @@ def update_session(session_id: str, update: SessionUpdate):
 @app.options("/sessions/{session_id}")
 def options_session(session_id: str):
     return {}
+@app.patch("/sessions/{session_id}/cancel")
+def cancel_session(session_id: str):
+    supabase.table("sessions").update({"status": "cancelled"}).filter("id", "eq", session_id).execute()
+    return {"message": "Session cancelled"}
+
+@app.options("/sessions/{session_id}/cancel")
+def options_cancel(session_id: str):
+    return {}

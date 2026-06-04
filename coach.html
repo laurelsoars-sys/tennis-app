@@ -136,6 +136,10 @@
                 </div>
                 <div class="action-btns">
                   <button class="btn btn-secondary btn-sm" onclick="window.location.href='edit-session.html?id=${session.id}&date=${session.date}&time=${encodeURIComponent(session.time)}&kids=${session.expected_kids}'">Edit</button>
+                  ${session.status === 'cancelled' 
+                    ? `<span class="tag tag-red">Cancelled</span>`
+                    : `<button class="btn btn-warning btn-sm" onclick="cancelSession('${session.id}')">Cancel</button>`
+                  }
                   <button class="btn btn-danger btn-sm" onclick="deleteSession('${session.id}')">Delete</button>
                 </div>
               </div>
@@ -185,7 +189,14 @@
       await fetch(`https://tennis-app-9esu.onrender.com/sessions/${sessionId}`, { method: 'DELETE' });
       loadDashboard();
     }
-
+    async function cancelSession(sessionId) {
+      if (!confirm('Are you sure you want to cancel this session?')) return;
+      await fetch(`https://tennis-app-9esu.onrender.com/sessions/${sessionId}/cancel`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      loadDashboard();
+    }
     function logout() {
       localStorage.removeItem('user');
       window.location.href = 'index.html';
