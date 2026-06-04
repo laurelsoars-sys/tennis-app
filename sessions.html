@@ -48,7 +48,7 @@
               <h2>${session.date}</h2>
               <p>${session.time} · ${session.expected_kids} kids expected</p>
             </div>
-            <button onclick="markAvailable('${session.id}')">I'm available</button>
+            <button onclick="markAvailable('${session.id}', this)" data-available="false">I'm available</button>
           </div>
         `).join('');
       } catch (err) {
@@ -56,17 +56,30 @@
       }
     }
 
-    async function markAvailable(sessionId) {
-      await fetch('https://tennis-app-9esu.onrender.com/availability', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: sessionId,
-          helper_id: user.id,
-          status: 'available'
-        })
-      });
-      alert('You are marked as available!');
+    async function markAvailable(sessionId, btn) {
+      const alreadyAvailable = btn.dataset.available === 'true';
+
+      if (alreadyAvailable) {
+        await fetch(`https://tennis-app-9esu.onrender.com/availability/${sessionId}/${user.id}`, {
+          method: 'DELETE'
+        });
+        btn.textContent = "I'm available";
+        btn.style.background = '#2563eb';
+        btn.dataset.available = 'false';
+      } else {
+        await fetch('https://tennis-app-9esu.onrender.com/availability', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            helper_id: user.id,
+            status: 'available'
+          })
+        });
+        btn.textContent = "Withdraw";
+        btn.style.background = '#dc2626';
+        btn.dataset.available = 'true';
+      }
     }
 
     function logout() {
