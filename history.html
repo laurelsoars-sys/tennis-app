@@ -31,6 +31,25 @@
   <div class="court-lines"></div>
 
   <script>
+        function formatDate(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      const today = new Date();
+      const tomorrow = new Date();
+      tomorrow.setDate(today.getDate() + 1);
+      
+      today.setHours(0,0,0,0);
+      tomorrow.setHours(0,0,0,0);
+      date.setHours(0,0,0,0);
+      
+      if (date.getTime() === today.getTime()) return 'Today';
+      if (date.getTime() === tomorrow.getTime()) return 'Tomorrow';
+      
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    }
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user) window.location.href = 'index.html';
     document.getElementById('welcome').textContent = `Hi ${user.full_name}!`;

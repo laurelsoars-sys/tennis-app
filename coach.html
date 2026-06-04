@@ -21,10 +21,11 @@
       </div>
     </div>
     <div class="header-buttons">
-      <button class="btn btn-secondary btn-sm" onclick="window.location.href='sessions.html'">Helper view</button>
-      <button class="btn btn-secondary btn-sm" onclick="window.location.href='fairness.html'">Fairness</button>
       
+      <button class="btn btn-secondary btn-sm" onclick="window.location.href='fairness.html'">Fairness</button>
+      <button class="btn btn-secondary btn-sm" onclick="window.location.href='calendar.html'">Calendar</button>
       <button class="btn btn-secondary btn-sm" onclick="window.location.href='helpers.html'">Helpers</button>
+      <button class="btn btn-secondary btn-sm" onclick="window.location.href='sessions.html'">Helper view</button>
       <button class="btn btn-secondary btn-sm" onclick="logout()">Sign out</button>
       <button class="btn btn-primary btn-sm" onclick="window.location.href='create-session.html'">+ New session</button>
     </div>
@@ -46,6 +47,25 @@
   <div class="court-lines"></div>
 
   <script>
+    function formatDate(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      const today = new Date();
+      const tomorrow = new Date();
+      tomorrow.setDate(today.getDate() + 1);
+      
+      today.setHours(0,0,0,0);
+      tomorrow.setHours(0,0,0,0);
+      date.setHours(0,0,0,0);
+      
+      if (date.getTime() === today.getTime()) return 'Today';
+      if (date.getTime() === tomorrow.getTime()) return 'Tomorrow';
+      
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    }
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user) window.location.href = 'index.html';
     document.getElementById('welcome').textContent = `Hi ${user.full_name}!`;
@@ -138,21 +158,21 @@
 
           const actionBtns = currentTab === 'upcoming' ? `
             <div class="action-btns">
-              <button class="btn btn-secondary btn-sm" onclick="window.location.href='edit-session.html?id=${session.id}&date=${session.date}&time=${encodeURIComponent(session.time)}&kids=${session.expected_kids}&notes=${encodeURIComponent(session.notes || '')}'">Edit</button>
+              <button class="btn btn-secondary btn-sm" onclick="window.location.href='edit-session.html?id=${session.id}&date=${formatDate(session.date)}&time=${encodeURIComponent(session.time)}&kids=${session.expected_kids}&notes=${encodeURIComponent(session.notes || '')}'">Edit</button>
               ${session.status === 'cancelled'
                 ? `<span class="tag tag-red">Cancelled</span>`
                 : `<button class="btn btn-warning btn-sm" onclick="cancelSession('${session.id}')">Cancel</button>`}
               <button class="btn btn-danger btn-sm" onclick="deleteSession('${session.id}')">Delete</button>
             </div>` : `
             <div class="action-btns">
-              <button class="btn btn-secondary btn-sm" onclick="window.location.href='attendance.html?id=${session.id}&date=${session.date}&time=${encodeURIComponent(session.time)}'">Attendance</button>
+              <button class="btn btn-secondary btn-sm" onclick="window.location.href='attendance.html?id=${session.id}&date=${formatDate(session.date)}&time=${encodeURIComponent(session.time)}'">Attendance</button>
             </div>`;
 
           html += `
             <div class="card-wide">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
                 <div>
-                  <h2>${session.date}</h2>
+                  <h2>${formatDate(session.date)}</h2>
                   <p class="session-meta">${session.time} &middot; ${session.expected_kids} kids &middot; ${assignedIds.length} assigned${session.notes ? ` &middot; ${session.notes}` : ''}</p>
                 </div>
                 ${actionBtns}

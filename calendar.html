@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:20px; }
+    .cal-day-header { text-align:center; font-size:12px; font-weight:500; color:#999; padding:8px 0; }
+    .cal-day { min-height:64px; border-radius:10px; padding:6px; background:var(--day-bg, #f5f7f5); cursor:default; position:relative; }
+    .cal-day.has-session { background:#dcfce7; cursor:pointer; }
+    .cal-day.has-session:hover { background:#bbf7d0; }
+    .cal-day.today { outline:2px solid #16a34a; }
+    .cal-day.other-month { opacity:0.35; }
+    .cal-day.cancelled { background:#fee2e2; }
+    .cal-date { font-size:13px; font-weight:500; color:#1a1a1a; margin-bottom:4px; }
+    .cal-dot { width:6px; height:6px; border-radius:50%; background:#16a34a; display:inline-block; margin:1px; }
+    .cal-dot.cancelled { background:#dc2626; }
+    .cal-dot.my-session { background:#2563eb; }
+    .month-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .month-title { font-size:18px; font-weight:600; color:#1a1a1a; }
+    .session-popup { background:white; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.12); padding:16px; margin-bottom:12px; }
+    .legend { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+    .legend-item { display:flex; align-items:center; gap:6px; font-size:13px; color:#666; }
+  </style>
+</head>
+<body style="padding:20px">
+  <div class="page-header">
+    <div class="logo">
+      <div class="logo-icon">🎾</div>
+      <div>
+        <div class="logo-text">Calendar</div>
+        <div class="logo-sub" id="welcome"></div>
+      </div>
+    </div>
+    <div class="header-buttons">
+      <button class="btn btn-secondary btn-sm" id="back-btn" onclick="goBack()">Back</button>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="cal-dot"></span> Session</div>
+    <div class="legend-item"><span class="cal-dot my-session"></span> My session</div>
+    <div class="legend-item"><span class="cal-dot cancelled"></span> Cancelled</div>
+  </div>
+
+  <div class="month-nav">
+    <button class="btn btn-secondary btn-sm" onclick="changeMonth(-1)">Previous</button>
+    <span class="month-title" id="month-title"></span>
+    <button class="btn btn-secondary btn-sm" onclick="changeMonth(1)">Next</button>
+  </div>
+
+  <div class="cal-grid" id="cal-header"></div>
+  <div class="cal-grid" id="cal-grid"></div>
+  <div id="selected-sessions"></div>
+  <div class="court-lines"></div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) window.location.href = 'index.html';
+    document.getElementById('welcome').textContent = user.full_name;
+
+    function goBack() {
+      window.location.href = user.role === 'coach' ? 'coach.html' : 'sessions.html';
+    }
+
+    let currentDate = new Date();
+    let allSessions = [];
+    let mySessions = new Set();
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      const today = new Date();
+      const tomorrow = new Date();
+      tomorrow.setDate(today.getDate() + 1);
+      today.setHours(0,0,0,0);
+      tomorrow.setHours(0,0,0,0);
+      date.setHours(0,0,0,0);
+      if (date.getTime() === today.getTime()) return 'Today';
+      if (date.getTime() === tomorrow.getTime()) return 'Tomorrow';
+      return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    }
+
+    async function loadCalendarData() {
+      try {
+        const sessionsRes = await fetch('https://tennis-app-9esu.onrender.com/sessions?limit=100&offset=0&filter=upcoming');
+        allSessions = await sessionsRes.json();
+
+        if (user.role !== 'coach') {
+          const availRes = await fetch(`https://tennis-app-9esu.onrender.com/availability/user/${user.id}`);
+          const myAvail = await availRes.json();
+          const mySessionIds = new Set(myAvail.map(a => a.session_id));
+          const assignRes = await fetch(`https://tennis-app-9esu.onrender.com/helper-history/${user.id}?filter=upcoming`);
+          const myHistory = await assignRes.json();
+          myHistory.forEach(s => mySessionIds.add(s.id));
+          mySessions = mySessionIds;
+        }
+
+        renderCalendar();
+      } catch (err) {
+        console.error('Calendar error:', err);
+      }
+    }
+
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      document.getElementById('month-title').textContent = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      const header = document.getElementById('cal-header');
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      header.innerHTML = days.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrevMonth = new Date(year, month, 0).getDate();
+      const today = new Date();
+      today.setHours(0,0,0,0);
+
+      const sessionsByDate = {};
+      allSessions.forEach(s => {
+        if (!sessionsByDate[s.date]) sessionsByDate[s.date] = [];
+        sessionsByDate[s.date].push(s);
+      });
+
+      let cells = [];
+
+      for (let i = firstDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        cells.push(`<div class="cal-day other-month"><div class="cal-date">${day}</div></div>`);
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const sessions = sessionsByDate[dateStr] || [];
+        const dateObj = new Date(dateStr + 'T00:00:00');
+        dateObj.setHours(0,0,0,0);
+        const isToday = dateObj.getTime() === today.getTime();
+        const hasSessions = sessions.length > 0;
+        const isCancelled = sessions.every(s => s.status === 'cancelled');
+
+        const dots = sessions.map(s => {
+          const isMine = mySessions.has(s.id);
+          const isCancelled = s.status === 'cancelled';
+          return `<span class="cal-dot ${isCancelled ? 'cancelled' : isMine ? 'my-session' : ''}"></span>`;
+        }).join('');
+
+        cells.push(`
+          <div class="cal-day ${hasSessions ? (isCancelled ? 'cancelled' : 'has-session') : ''} ${isToday ? 'today' : ''}"
+            ${hasSessions ? `onclick="showSessions('${dateStr}')"` : ''}>
+            <div class="cal-date">${d}</div>
+            <div>${dots}</div>
+          </div>`);
+      }
+
+      const remaining = 7 - (cells.length % 7);
+      if (remaining < 7) {
+        for (let d = 1; d <= remaining; d++) {
+          cells.push(`<div class="cal-day other-month"><div class="cal-date">${d}</div></div>`);
+        }
+      }
+
+      document.getElementById('cal-grid').innerHTML = cells.join('');
+    }
+
+    function showSessions(dateStr) {
+      const sessions = allSessions.filter(s => s.date === dateStr);
+      const container = document.getElementById('selected-sessions');
+
+      container.innerHTML = `
+        <h2 style="margin-bottom:12px">${formatDate(dateStr)}</h2>
+        ${sessions.map(s => `
+          <div class="session-popup">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <p style="font-weight:500;color:#1a1a1a">${s.time}</p>
+                <p class="session-meta">${s.expected_kids} kids expected${s.notes ? ` &middot; ${s.notes}` : ''}</p>
+              </div>
+              ${s.status === 'cancelled'
+                ? '<span class="tag tag-red">Cancelled</span>'
+                : mySessions.has(s.id)
+                  ? '<span class="tag tag-green">Responding</span>'
+                  : '<span class="tag tag-gray">No response</span>'}
+            </div>
+          </div>`).join('')}`;
+
+      container.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function changeMonth(dir) {
+      currentDate.setMonth(currentDate.getMonth() + dir);
+      renderCalendar();
+      document.getElementById('selected-sessions').innerHTML = '';
+    }
+
+    loadCalendarData();
+  </script>
+</body>
+</html>
