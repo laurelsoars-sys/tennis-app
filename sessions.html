@@ -42,28 +42,32 @@
         const sessions = await response.json();
         const list = document.getElementById('sessions-list');
 
-        if (sessions.length === 0) {
-          list.innerHTML = '<p class="empty">No upcoming sessions yet.</p>';
+        const availRes = await fetch(`https://tennis-app-9esu.onrender.com/availability/user/${user.id}`);
+        const myAvailability = await availRes.json();
+        const respondedSessionIds = new Set(myAvailability.map(a => a.session_id));
+
+        const unresponded = sessions.filter(s => !respondedSessionIds.has(s.id) && s.status !== 'cancelled');
+
+        if (unresponded.length === 0) {
+          list.innerHTML = `
+            <div class="card-wide" style="text-align:center;padding:32px 20px">
+              <div style="font-size:32px;margin-bottom:12px">🎾</div>
+              <p style="font-weight:500;color:#1a1a1a;margin-bottom:4px">All caught up!</p>
+              <p style="color:#999;font-size:13px">No sessions need a response right now.</p>
+              <button class="btn btn-secondary btn-sm" style="margin-top:16px" onclick="window.location.href='history.html'">View my activity</button>
+            </div>`;
           return;
         }
 
-        const availRes = await fetch(`https://tennis-app-9esu.onrender.com/availability/user/${user.id}`);
-        const myAvailability = await availRes.json();
-        const availableSessionIds = new Set(myAvailability.map(a => a.session_id));
-
-        list.innerHTML = sessions.map(session => `
+        list.innerHTML = unresponded.map(session => `
           <div class="card-wide">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div>
-                <h2>${session.date}</h2>
-                <p class="session-meta">${session.time} &middot; ${session.expected_kids} kids expected${session.notes ? ` &middot; ${session.notes}` : ''}</p>
-              </div>
-              ${session.status === 'cancelled'
-                ? `<span class="tag tag-red">Cancelled</span>`
-                : availableSessionIds.has(session.id)
-                  ? `<button class="btn btn-danger btn-sm" data-available="true" onclick="markAvailable('${session.id}', this)">Withdraw</button>`
-                  : `<button class="btn btn-primary btn-sm" data-available="false" onclick="markAvailable('${session.id}', this)">I'm available</button>`
-              }
+            <div style="margin-bottom:12px">
+              <h2>${session.date}</h2>
+              <p class="session-meta">${session.time} &middot; ${session.expected_kids} kids expected${session.notes ? ` &middot; ${session.notes}` : ''}</p>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" style="flex:1" onclick="respond('${session.id}', 'available', this.parentElement)">I'm available</button>
+              <button class="btn btn-secondary" style="flex:1" onclick="respond('${session.id}', 'unavailable', this.parentElement)">Not available</button>
             </div>
           </div>
         `).join('');
@@ -72,28 +76,30 @@
       }
     }
 
-    async function markAvailable(sessionId, btn) {
-      const alreadyAvailable = btn.dataset.available === 'true';
+    async function respond(sessionId, status, btnContainer) {
+      const message = status === 'available'
+        ? 'Confirm you are available for this session?'
+        : 'Confirm you are NOT available for this session?';
       
-      if (alreadyAvailable) {
-        if (!confirm('Are you sure you want to withdraw your availability?')) return;
-        await fetch(`https://tennis-app-9esu.onrender.com/availability/${sessionId}/${user.id}`, { method: 'DELETE' });
-        btn.textContent = "I'm available";
-        btn.classList.remove('btn-danger');
-        btn.classList.add('btn-primary');
-        btn.dataset.available = 'false';
-      } else {
-        if (!confirm('Confirm you are available for this session?')) return;
-        await fetch('https://tennis-app-9esu.onrender.com/availability', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: sessionId, helper_id: user.id, status: 'available' })
-        });
-        btn.textContent = "Withdraw";
-        btn.classList.remove('btn-primary');
-        btn.classList.add('btn-danger');
-        btn.dataset.available = 'true';
-      }
+      if (!confirm(message)) return;
+
+      await fetch('https://tennis-app-9esu.onrender.com/availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          helper_id: user.id,
+          status: status
+        })
+      });
+
+      const card = btnContainer.closest('.card-wide');
+      card.style.opacity = '0';
+      card.style.transition = 'opacity 0.3s';
+      setTimeout(() => {
+        loadSessions();
+        loadNotifications();
+      }, 300);
     }
     let notifications = [];
 

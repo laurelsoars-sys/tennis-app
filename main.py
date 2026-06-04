@@ -109,12 +109,18 @@ def get_availability(session_id: str):
 
 @app.post("/availability")
 def mark_availability(availability: Availability):
-    result = supabase.table("availability").insert({
-        "session_id": availability.session_id,
-        "helper_id": availability.helper_id,
-        "status": availability.status
-    }).execute()
-    return result.data
+    existing = supabase.table("availability").select("*").filter("session_id", "eq", availability.session_id).filter("helper_id", "eq", availability.helper_id).execute()
+    if len(existing.data) > 0:
+        supabase.table("availability").update({
+            "status": availability.status
+        }).filter("session_id", "eq", availability.session_id).filter("helper_id", "eq", availability.helper_id).execute()
+    else:
+        result = supabase.table("availability").insert({
+            "session_id": availability.session_id,
+            "helper_id": availability.helper_id,
+            "status": availability.status
+        }).execute()
+    return {"message": "Availability recorded"}
 
 @app.get("/assignments/{session_id}")
 def get_assignments(session_id: str):

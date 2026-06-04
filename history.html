@@ -86,14 +86,15 @@
             : s.status === 'waitlist' ? '<span class="tag tag-yellow">Waitlisted</span>'
             : s.status === 'declined' ? '<span class="tag tag-red">Declined</span>'
             : s.availability === 'available' ? '<span class="tag tag-gray">Pending</span>'
-            : '<span class="tag tag-gray">Available</span>';
+            : s.availability === 'unavailable' ? '<span class="tag tag-red">Not available</span>'
+            : '<span class="tag tag-gray">No response</span>';
 
           const cancelledTag = s.session_status === 'cancelled'
             ? '<span class="tag tag-red" style="margin-left:6px">Cancelled</span>'
             : '';
 
-          const withdrawBtn = filter === 'upcoming' && s.availability === 'available' && s.status !== 'approved'
-            ? `<button class="btn btn-danger btn-sm" style="margin-top:10px;width:100%" onclick="withdraw('${s.id}')">Withdraw availability</button>`
+          const withdrawBtn = filter === 'upcoming' && s.availability && s.status !== 'approved'
+            ? `<button class="btn btn-danger btn-sm" style="margin-top:10px;width:100%" onclick="withdraw('${s.id}')">Change response</button>`
             : '';
 
           return `
