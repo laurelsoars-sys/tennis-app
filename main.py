@@ -122,9 +122,32 @@ def login(request: LoginRequest):
 def withdraw_availability(session_id: str, helper_id: str):
     result = supabase.table("availability").delete().filter("session_id", "eq", session_id).filter("helper_id", "eq", helper_id).execute()
     return {"message": "Withdrawn successfully"}
+
 @app.delete("/sessions/{session_id}")
 def delete_session(session_id: str):
     supabase.table("assignments").delete().filter("sessions_id", "eq", session_id).execute()
     supabase.table("availability").delete().filter("session_id", "eq", session_id).execute()
     supabase.table("sessions").delete().filter("id", "eq", session_id).execute()
     return {"message": "Session deleted successfully"}
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    full_name: str
+
+@app.post("/signup")
+def signup(request: SignupRequest):
+    try:
+        result = supabase.auth.sign_up({
+            "email": request.email,
+            "password": request.password
+        })
+        user = result.user
+        supabase.table("profiles").insert({
+            "id": user.id,
+            "email": request.email,
+            "full_name": request.full_name,
+            "role": "helper"
+        }).execute()
+        return {"message": "Account created successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
