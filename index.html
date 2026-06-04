@@ -4,30 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tennis App</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f0f4f8; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-    .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); width: 100%; max-width: 380px; }
-    h1 { margin-top: 0; font-size: 24px; color: #1a1a1a; }
-    input { width: 100%; padding: 10px; margin: 8px 0 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
-    button { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
-    button:hover { background: #1d4ed8; }
-    .error { color: red; font-size: 13px; margin-top: 8px; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="card">
-    <h1>Tennis App</h1>
-    <p style="color:#666">Sign in to continue</p>
-    <label>Email</label>
-    <input type="email" id="email" placeholder="you@example.com" />
-    <label>Password</label>
-    <input type="password" id="password" placeholder="••••••••" />
-    <button onclick="login()">Sign in</button>
-    <div class="error" id="error"></div>
-    <div style="text-align:center; margin-top:16px; font-size:14px; color:#666">
-      No account? <a href="signup.html" style="color:#2563eb;text-decoration:none">Sign up as a helper</a>
+  <div class="page-center">
+    <div class="card">
+      <div class="logo">
+        <div class="logo-icon">🎾</div>
+        <div>
+          <div class="logo-text">Tennis App</div>
+          <div class="logo-sub">Session management</div>
+        </div>
+      </div>
+      <h1>Welcome back</h1>
+      <p style="margin-bottom:20px">Sign in to continue</p>
+      <label>Email</label>
+      <input type="email" id="email" placeholder="you@example.com" />
+      <label>Password</label>
+      <input type="password" id="password" placeholder="••••••••" />
+      <button class="btn btn-primary" onclick="login()">Sign in</button>
+      <div class="error-msg" id="error"></div>
+      <div style="text-align:center;margin-top:16px;font-size:13px;color:#666">
+        No account? <a href="signup.html" style="color:#16a34a;text-decoration:none;font-weight:500">Sign up as a helper</a>
+      </div>
     </div>
   </div>
+  <div class="court-lines"></div>
 
   <script>
     async function login() {
