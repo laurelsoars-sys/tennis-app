@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coach Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    h1 { margin: 0; color: #1a1a1a; }
+    h2 { color: #1a1a1a; margin: 0 0 4px; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); margin-bottom: 16px; }
+    .session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .session-info p { margin: 0; color: #666; font-size: 14px; }
+    .helper-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #f0f0f0; }
+    .helper-name { font-size: 15px; color: #1a1a1a; }
+    button { padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    .approved { background: #16a34a; }
+    .approved:hover { background: #15803d; }
+    .logout { background: none; color: #666; font-size: 14px; border: 1px solid #ddd; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+    .logout:hover { background: #f0f4f8; }
+    .empty { color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Coach dashboard</h1>
+    <button class="logout" onclick="logout()">Sign out</button>
+  </div>
+  <div id="dashboard"></div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) {
+      window.location.href = 'index.html';
+    }
+
+    async function loadDashboard() {
+      try {
+        const sessionsRes = await fetch('http://127.0.0.1:8000/sessions');
+        const sessions = await sessionsRes.json();
+        console.log('sessions:', sessions);
+        const dashboard = document.getElementById('dashboard');
+
+        if (sessions.length === 0) {
+          dashboard.innerHTML = '<p class="empty">No sessions yet.</p>';
+          return;
+        }
+
+        let html = '';
+        for (const session of sessions) {
+          const availRes = await fetch(`http://127.0.0.1:8000/availability/${session.id}`);
+          const availability = await availRes.json();
+          console.log('availability:', availability);
+
+          const assignRes = await fetch(`http://127.0.0.1:8000/assignments/${session.id}`);
+          const assignments = await assignRes.json();
+          const assignedIds = assignments.map(a => a.helper_id);
+
+          const helperRows = availability.length === 0
+            ? '<p class="empty">No helpers available yet.</p>'
+            : availability.map(a => `
+                <div class="helper-row">
+                  <span class="helper-name">${a.helper_id}</span>
+                  <button
+                    class="${assignedIds.includes(a.helper_id) ? 'approved' : ''}"
+                    onclick="approve('${session.id}', '${a.helper_id}', this)">
+                    ${assignedIds.includes(a.helper_id) ? 'Approved' : 'Approve'}
+                  </button>
+                </div>
+              `).join('');
+
+          html += `
+            <div class="card">
+              <div class="session-header">
+                <div class="session-info">
+                  <h2>${session.date}</h2>
+                  <p>${session.time} · ${session.expected_kids} kids expected</p>
+                </div>
+              </div>
+              ${helperRows}
+            </div>
+          `;
+        }
+        dashboard.innerHTML = html;
+      } catch (err) {
+        console.error('Dashboard error:', err);
+        document.getElementById('dashboard').innerHTML = '<p class="empty">Error loading dashboard.</p>';
+      }
+    }
+
+    async function approve(sessionId, helperId, btn) {
+      try {
+        await fetch('http://127.0.0.1:8000/assignments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            helper_id: helperId,
+            approved_by: user.id
+          })
+        });
+        btn.textContent = 'Approved';
+        btn.classList.add('approved');
+      } catch (err) {
+        console.error('Approve error:', err);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('user');
+      window.location.href = 'index.html';
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sessions</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    h1 { margin: 0; color: #1a1a1a; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .session-info h2 { margin: 0 0 4px; font-size: 18px; color: #1a1a1a; }
+    .session-info p { margin: 0; color: #666; font-size: 14px; }
+    button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    .logout { background: none; color: #666; font-size: 14px; border: 1px solid #ddd; }
+    .logout:hover { background: #f0f4f8; color: #1a1a1a; }
+    .empty { color: #666; text-align: center; margin-top: 40px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Upcoming sessions</h1>
+    <div style="display:flex;gap:10px;">
+      <button onclick="window.location.href='coach.html'">Coach view</button>
+      <button class="logout" onclick="logout()">Sign out</button>
+    </div>
+  </div>
+  <div id="sessions-list"></div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) window.location.href = 'index.html';
+
+    async function loadSessions() {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/sessions');
+        const sessions = await response.json();
+        const list = document.getElementById('sessions-list');
+        if (sessions.length === 0) {
+          list.innerHTML = '<p class="empty">No upcoming sessions yet.</p>';
+          return;
+        }
+        list.innerHTML = sessions.map(session => `
+          <div class="card">
+            <div class="session-info">
+              <h2>${session.date}</h2>
+              <p>${session.time} · ${session.expected_kids} kids expected</p>
+            </div>
+            <button onclick="markAvailable('${session.id}')">I'm available</button>
+          </div>
+        `).join('');
+      } catch (err) {
+        document.getElementById('sessions-list').innerHTML = '<p class="empty">Cannot reach server. Is it running?</p>';
+      }
+    }
+
+    async function markAvailable(sessionId) {
+      await fetch('http://127.0.0.1:8000/availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          helper_id: user.id,
+          status: 'available'
+        })
+      });
+      alert('You are marked as available!');
+    }
+
+    function logout() {
+      localStorage.removeItem('user');
+      window.location.href = 'index.html';
+    }
+
+    loadSessions();
+  </script>
+</body>
+</html>
