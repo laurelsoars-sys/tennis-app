@@ -16,33 +16,16 @@
       </div>
     </div>
     <div class="header-buttons">
-      <button class="btn btn-secondary btn-sm" onclick="window.location.href='coach.html'">Back to dashboard</button>
+      <button class="btn btn-secondary btn-sm" onclick="window.location.href='coach.html'">Back</button>
     </div>
   </div>
 
-  <div id="attendance-list"></div>
+  <div style="max-width:600px">
+    <div class="card-wide" id="attendance-list"></div>
+  </div>
   <div class="court-lines"></div>
 
   <script>
-    function formatDate(dateStr) {
-      const date = new Date(dateStr + 'T00:00:00');
-      const today = new Date();
-      const tomorrow = new Date();
-      tomorrow.setDate(today.getDate() + 1);
-      
-      today.setHours(0,0,0,0);
-      tomorrow.setHours(0,0,0,0);
-      date.setHours(0,0,0,0);
-      
-      if (date.getTime() === today.getTime()) return 'Today';
-      if (date.getTime() === tomorrow.getTime()) return 'Tomorrow';
-      
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-    }
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user || user.role !== 'coach') window.location.href = 'index.html';
 
@@ -51,7 +34,12 @@
     const date = params.get('date');
     const time = params.get('time');
 
-    document.getElementById('session-info').textContent = `${date} at ${time}`;
+    function formatDate(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    }
+
+    document.getElementById('session-info').textContent = `${formatDate(date)} at ${time}`;
 
     async function loadAttendance() {
       try {
@@ -76,26 +64,24 @@
           return;
         }
 
-        list.innerHTML = `
-          <div class="card-wide">
-            ${approved.map(a => {
-              const showed = attendMap[a.helper_id];
-              return `
-                <div class="helper-row">
-                  <span class="helper-name">${nameMap[a.helper_id] || a.helper_id}</span>
-                  <div class="action-btns">
-                    <button class="btn btn-sm ${showed === true ? 'btn-approved' : 'btn-secondary'}" onclick="markAttendance('${a.helper_id}', true)">Showed up</button>
-                    <button class="btn btn-sm ${showed === false ? 'btn-danger' : 'btn-secondary'}" onclick="markAttendance('${a.helper_id}', false)">No show</button>
-                  </div>
-                </div>`;
-            }).join('')}
-          </div>`;
+        list.innerHTML = approved.map(a => {
+          const showed = attendMap[a.helper_id];
+          return `
+            <div class="helper-row">
+              <span class="helper-name">${nameMap[a.helper_id] || a.helper_id}</span>
+              <div class="action-btns">
+                <button class="btn btn-sm ${showed === true ? 'btn-approved' : 'btn-secondary'}" onclick="markAttendance('${a.helper_id}', true)">Showed up</button>
+                <button class="btn btn-sm ${showed === false ? 'btn-danger' : 'btn-secondary'}" onclick="markAttendance('${a.helper_id}', false)">No show</button>
+              </div>
+            </div>`;
+        }).join('');
       } catch (err) {
         document.getElementById('attendance-list').innerHTML = '<p class="empty">Error loading attendance.</p>';
       }
     }
 
     async function markAttendance(helperId, showedUp) {
+      if (!confirm(showedUp ? 'Mark as showed up?' : 'Mark as no show?')) return;
       await fetch('https://tennis-app-9esu.onrender.com/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
