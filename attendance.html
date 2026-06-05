@@ -42,6 +42,7 @@
     document.getElementById('session-info').textContent = `${formatDate(date)} at ${time}`;
 
     async function loadAttendance() {
+        document.getElementById('attendance-list').innerHTML = '<div class="loading-state"><div class="spinner"></div><span>Loading attendance...</span></div>';
       try {
         const assignRes = await fetch(`https://tennis-app-9esu.onrender.com/assignments/${sessionId}`);
         const assignments = await assignRes.json();

@@ -83,6 +83,7 @@
     }
 
     async function loadCalendarData() {
+        document.getElementById('cal-grid').innerHTML = '<div class="loading-state"><div class="spinner"></div><span>Loading calendar...</span></div>';
         try {
             const sessionsRes = await fetch('https://tennis-app-9esu.onrender.com/sessions?limit=100&offset=0&filter=upcoming');
             allSessions = await sessionsRes.json();

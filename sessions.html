@@ -57,10 +57,12 @@
     document.getElementById('welcome').textContent = `Hi ${user.full_name}!`;
 
     async function loadSessions() {
+      const list = document.getElementById('sessions-list');
+      list.innerHTML = '<div class="loading-state"><div class="spinner"></div><span>Loading sessions...</span></div>';
+      
       try {
         const response = await fetch('https://tennis-app-9esu.onrender.com/sessions?filter=upcoming');
         const sessions = await response.json();
-        const list = document.getElementById('sessions-list');
 
         const availRes = await fetch(`https://tennis-app-9esu.onrender.com/my-availability/${user.id}`);
         const myAvailability = await availRes.json();
@@ -92,7 +94,7 @@
           </div>
         `).join('');
       } catch (err) {
-        document.getElementById('sessions-list').innerHTML = '<p class="empty">Cannot reach server.</p>';
+        list.innerHTML = '<p class="empty">Cannot reach server.</p>';
       }
     }
 

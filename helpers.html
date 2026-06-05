@@ -30,6 +30,7 @@
     if (!user || user.role !== 'coach') window.location.href = 'index.html';
 
     async function loadHelpers() {
+        document.getElementById('helpers-list').innerHTML = '<div class="loading-state"><div class="spinner"></div><span>Loading helpers...</span></div>';
       try {
         const response = await fetch('https://tennis-app-9esu.onrender.com/helpers');
         const helpers = await response.json();

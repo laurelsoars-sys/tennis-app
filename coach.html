@@ -85,6 +85,7 @@
     }
 
     async function loadDashboard() {
+      document.getElementById('dashboard').innerHTML = '<div class="loading-state"><div class="spinner"></div><span>Loading dashboard...</span></div>';
       try {
         const sessionsRes = await fetch(`https://tennis-app-9esu.onrender.com/sessions?limit=${LIMIT}&offset=${offset}&filter=${currentTab}`);
         const sessions = await sessionsRes.json();
