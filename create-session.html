@@ -4,50 +4,44 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Create Session</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body { font-family: Arial, sans-serif; background: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-    .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); width: 100%; max-width: 420px; }
-    h1 { margin-top: 0; font-size: 24px; color: #1a1a1a; }
-    label { font-size: 14px; color: #444; display: block; margin-bottom: 4px; }
-    input { width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
-    button { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
-    button:hover { background: #1d4ed8; }
-    .back { background: none; color: #666; border: 1px solid #ddd; margin-bottom: 12px; }
-    .back:hover { background: #f0f4f8; color: #1a1a1a; }
-    .success { color: green; font-size: 14px; margin-top: 12px; text-align: center; }
-    .error { color: red; font-size: 14px; margin-top: 12px; text-align: center; }
-    .days-section { margin-bottom: 16px; }
-    .days-section p { font-size: 14px; color: #444; margin: 0 0 8px; }
-    .days-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 8px; }
-    .day-btn { padding: 8px 4px; background: #f0f4f8; color: #444; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; cursor: pointer; text-align: center; }
-    .day-btn.selected { background: #2563eb; color: white; border-color: #2563eb; }
-    .weeks-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-    .weeks-row label { margin: 0; white-space: nowrap; }
-    .weeks-row input { margin: 0; width: 70px; }
-    .divider { border: none; border-top: 1px solid #eee; margin: 16px 0; }
+    .days-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:8px; }
+    .day-btn { padding:8px 4px; background:#f5f7f5; color:#444; border:1.5px solid #e2e8e2; border-radius:10px; font-size:13px; cursor:pointer; text-align:center; font-weight:500; transition: all 0.15s; }
+    .day-btn.selected { background:#16a34a; color:white; border-color:#16a34a; }
+    .weeks-row { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+    .weeks-row label { margin:0; white-space:nowrap; min-width:80px; }
+    .weeks-row input { margin:0; width:80px; }
   </style>
 </head>
-<body>
-  <div class="card">
-    <button class="back" onclick="window.location.href='coach.html'">Back to dashboard</button>
-    <h1>Create session</h1>
+<body style="padding:20px">
+  <div class="page-header">
+    <div class="logo">
+      <div class="logo-icon">🎾</div>
+      <div>
+        <div class="logo-text">Create session</div>
+        <div class="logo-sub">Schedule a new session</div>
+      </div>
+    </div>
+    <div class="header-buttons">
+      <button class="btn btn-secondary btn-sm" onclick="window.location.href='coach.html'">Back</button>
+    </div>
+  </div>
 
-    <label>Start date</label>
-    <input type="date" id="date" />
+  <div style="max-width:480px">
+    <div class="card-wide">
+      <label>Start date</label>
+      <input type="date" id="date" />
+      <label>Time</label>
+      <input type="text" id="time" placeholder="e.g. 5:00 PM" />
+      <label>Expected number of kids</label>
+      <input type="number" id="kids" placeholder="e.g. 18" />
+      <label>Notes (optional)</label>
+      <input type="text" id="notes" placeholder="e.g. Bring extra balls, outdoor court 3" />
 
-    <label>Time</label>
-    <input type="text" id="time" placeholder="e.g. 5:00 PM" />
+      <hr class="divider">
 
-    <label>Expected number of kids</label>
-    <input type="number" id="kids" placeholder="e.g. 18" />
-    
-    <label>Notes (optional)</label>
-    <input type="text" id="notes" placeholder="e.g. Supposed to rain, Court 3 might be booked" />
-
-    <hr class="divider">
-
-    <div class="days-section">
-      <p>Repeat on these days</p>
+      <label>Repeat on these days</label>
       <div class="days-grid">
         <div class="day-btn" onclick="toggleDay(this, 0)">Sun</div>
         <div class="day-btn" onclick="toggleDay(this, 1)">Mon</div>
@@ -57,39 +51,22 @@
         <div class="day-btn" onclick="toggleDay(this, 5)">Fri</div>
         <div class="day-btn" onclick="toggleDay(this, 6)">Sat</div>
       </div>
-    </div>
 
-    <div class="weeks-row">
-      <label>Repeat for</label>
-      <input type="number" id="weeks" value="1" min="1" max="12" />
-      <label>weeks</label>
-    </div>
+      <div class="weeks-row" style="margin-top:12px">
+        <label>Repeat for</label>
+        <input type="number" id="weeks" value="1" min="1" max="12" />
+        <label>weeks</label>
+      </div>
 
-    <button onclick="createSession()">Create session</button>
-    <div class="success" id="success"></div>
-    <div class="error" id="error"></div>
+      <button class="btn btn-primary" onclick="createSession()">Create session</button>
+      <div class="success-msg" id="success"></div>
+      <div class="error-msg" id="error"></div>
+    </div>
   </div>
 
+  <div class="court-lines"></div>
+
   <script>
-    function formatDate(dateStr) {
-      const date = new Date(dateStr + 'T00:00:00');
-      const today = new Date();
-      const tomorrow = new Date();
-      tomorrow.setDate(today.getDate() + 1);
-      
-      today.setHours(0,0,0,0);
-      tomorrow.setHours(0,0,0,0);
-      date.setHours(0,0,0,0);
-      
-      if (date.getTime() === today.getTime()) return 'Today';
-      if (date.getTime() === tomorrow.getTime()) return 'Tomorrow';
-      
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-    }
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user || user.role !== 'coach') window.location.href = 'index.html';
 
@@ -109,7 +86,6 @@
       const dates = [];
       const start = new Date(startDate);
       start.setDate(start.getDate() + 1);
-
       for (let w = 0; w < weeks; w++) {
         for (let d = 0; d < 7; d++) {
           const date = new Date(start);
@@ -127,22 +103,19 @@
       const time = document.getElementById('time').value;
       const kids = document.getElementById('kids').value;
       const weeks = parseInt(document.getElementById('weeks').value);
+      const notes = document.getElementById('notes').value;
 
       if (!date || !time || !kids) {
-        document.getElementById('error').textContent = 'Please fill in all fields.';
+        document.getElementById('error').textContent = 'Please fill in all required fields.';
         return;
       }
 
+      let dates = selectedDays.size > 0 ? getDatesForDays(date, selectedDays, weeks) : [date];
+
+      if (!confirm(`Create ${dates.length} session${dates.length > 1 ? 's' : ''}?`)) return;
+
       document.getElementById('error').textContent = '';
       document.getElementById('success').textContent = '';
-
-      let dates = [];
-
-      if (selectedDays.size > 0) {
-        dates = getDatesForDays(date, selectedDays, weeks);
-      } else {
-        dates = [date];
-      }
 
       try {
         let created = 0;
@@ -152,22 +125,21 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               date: d,
-              time: time,
+              time,
               expected_kids: parseInt(kids),
               created_by: user.id,
-              notes: document.getElementById('notes').value
+              notes
             })
           });
           if (response.ok) created++;
         }
-
-        document.getElementById('success').textContent = `${created} session${created > 1 ? 's' : ''} created successfully!`;
+        document.getElementById('success').textContent = `${created} session${created > 1 ? 's' : ''} created!`;
         document.getElementById('date').value = '';
         document.getElementById('time').value = '';
         document.getElementById('kids').value = '';
+        document.getElementById('notes').value = '';
         selectedDays.clear();
         document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'));
-
       } catch (err) {
         document.getElementById('error').textContent = 'Cannot reach server.';
       }
