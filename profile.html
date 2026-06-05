@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body style="padding:20px">
+  <div class="page-header">
+    <div class="logo">
+      <div class="logo-icon">🎾</div>
+      <div>
+        <div class="logo-text">My profile</div>
+        <div class="logo-sub" id="welcome"></div>
+      </div>
+    </div>
+    <div class="header-buttons">
+      <button class="btn btn-secondary btn-sm" onclick="goBack()">Back</button>
+    </div>
+  </div>
+
+  <div style="max-width:480px">
+    <div class="card-wide" id="profile-form">
+      <div class="loading-state"><div class="spinner"></div><span>Loading profile...</span></div>
+    </div>
+  </div>
+  <div class="court-lines"></div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) window.location.href = 'index.html';
+    document.getElementById('welcome').textContent = user.full_name;
+
+    function goBack() {
+      window.location.href = user.role === 'coach' ? 'coach.html' : 'sessions.html';
+    }
+
+    async function loadProfile() {
+      try {
+        const res = await fetch(`https://tennis-app-9esu.onrender.com/profile/${user.id}`);
+        const profile = await res.json();
+
+        document.getElementById('profile-form').innerHTML = `
+          <label>Full name</label>
+          <input type="text" id="name" value="${profile.full_name || ''}" />
+          <label>Email</label>
+          <input type="email" id="email" value="${profile.email || ''}" disabled style="opacity:0.6;cursor:not-allowed" />
+          <label>Phone number</label>
+          <input type="tel" id="phone" value="${profile.phone || ''}" placeholder="+1 555 000 0000" />
+          <label>Role</label>
+          <input type="text" value="${profile.role}" disabled style="opacity:0.6;cursor:not-allowed;text-transform:capitalize" />
+          <hr class="divider">
+          <button class="btn btn-primary" onclick="saveProfile()">Save changes</button>
+          <div class="success-msg" id="success"></div>
+          <div class="error-msg" id="error"></div>
+        `;
+      } catch (err) {
+        document.getElementById('profile-form').innerHTML = '<p class="empty">Cannot reach server.</p>';
+      }
+    }
+
+    async function saveProfile() {
+      const name = document.getElementById('name').value;
+      const phone = document.getElementById('phone').value;
+
+      if (!name) {
+        document.getElementById('error').textContent = 'Name cannot be empty.';
+        return;
+      }
+
+      if (!confirm('Save profile changes?')) return;
+
+      try {
+        const res = await fetch(`https://tennis-app-9esu.onrender.com/profile/${user.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ full_name: name, phone })
+        });
+
+        if (res.ok) {
+          const updatedUser = { ...user, full_name: name };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          document.getElementById('success').textContent = 'Profile updated!';
+          document.getElementById('error').textContent = '';
+        } else {
+          document.getElementById('error').textContent = 'Failed to update profile.';
+        }
+      } catch (err) {
+        document.getElementById('error').textContent = 'Cannot reach server.';
+      }
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html>

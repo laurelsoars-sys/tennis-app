@@ -425,3 +425,25 @@ def withdraw_availability(session_id: str, helper_id: str, request: WithdrawalRe
     else:
         supabase.table("availability").delete().filter("session_id", "eq", session_id).filter("helper_id", "eq", helper_id).execute()
     return {"message": "Withdrawn successfully"}
+@app.get("/profile/{user_id}")
+def get_profile(user_id: str):
+    result = supabase.table("profiles").select("*").filter("id", "eq", user_id).execute()
+    if len(result.data) == 0:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return result.data[0]
+
+class ProfileUpdate(BaseModel):
+    full_name: str
+    phone: str = ""
+
+@app.patch("/profile/{user_id}")
+def update_profile(user_id: str, update: ProfileUpdate):
+    supabase.table("profiles").update({
+        "full_name": update.full_name,
+        "phone": update.phone
+    }).filter("id", "eq", user_id).execute()
+    return {"message": "Profile updated"}
+
+@app.options("/profile/{user_id}")
+def options_profile(user_id: str):
+    return {}
