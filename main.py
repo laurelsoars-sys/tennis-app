@@ -412,3 +412,16 @@ def get_notifications(helper_id: str):
                 "status": a["status"]
             })
     return result
+class WithdrawalRequest(BaseModel):
+    reason: str = ""
+
+@app.delete("/availability/{session_id}/{helper_id}")
+def withdraw_availability(session_id: str, helper_id: str, request: WithdrawalRequest = None):
+    if request and request.reason:
+        supabase.table("availability").update({
+            "status": "withdrawn",
+            "withdrawal_reason": request.reason
+        }).filter("session_id", "eq", session_id).filter("helper_id", "eq", helper_id).execute()
+    else:
+        supabase.table("availability").delete().filter("session_id", "eq", session_id).filter("helper_id", "eq", helper_id).execute()
+    return {"message": "Withdrawn successfully"}
