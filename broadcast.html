@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Message Helpers</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body style="padding:20px">
+  <div class="page-header">
+    <div class="logo">
+      <div class="logo-icon">🎾</div>
+      <div>
+        <div class="logo-text">Message helpers</div>
+        <div class="logo-sub">Send a message to all helpers</div>
+      </div>
+    </div>
+    <div class="header-buttons">
+      <button class="btn btn-secondary btn-sm" onclick="window.location.href='coach.html'">Back</button>
+    </div>
+  </div>
+
+  <div style="max-width:480px">
+    <div class="card-wide">
+      <label>Message</label>
+      <textarea id="message" placeholder="e.g. Session moved to court 2 today" style="width:100%;padding:10px 14px;border:1.5px solid #e2e8e2;border-radius:10px;font-size:15px;font-family:inherit;resize:vertical;min-height:120px;box-sizing:border-box;margin-bottom:14px;background:#fafafa"></textarea>
+      <p style="font-size:13px;color:#999;margin-bottom:14px">This will send an SMS to all helpers who have a phone number saved.</p>
+      <button class="btn btn-primary" onclick="sendBroadcast()">Send to all helpers</button>
+      <div class="success-msg" id="success"></div>
+      <div class="error-msg" id="error"></div>
+    </div>
+  </div>
+  <div class="court-lines"></div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || user.role !== 'coach') window.location.href = 'index.html';
+
+    async function sendBroadcast() {
+      const message = document.getElementById('message').value.trim();
+      if (!message) {
+        document.getElementById('error').textContent = 'Please enter a message.';
+        return;
+      }
+      if (!confirm(`Send this message to all helpers?\n\n"${message}"`)) return;
+
+      try {
+        const res = await fetch('https://tennis-app-9esu.onrender.com/broadcast', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('success').textContent = data.message;
+          document.getElementById('message').value = '';
+          document.getElementById('error').textContent = '';
+        } else {
+          document.getElementById('error').textContent = 'Failed to send message.';
+        }
+      } catch (err) {
+        document.getElementById('error').textContent = 'Cannot reach server.';
+      }
+    }
+  </script>
+</body>
+</html>

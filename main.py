@@ -447,3 +447,19 @@ def update_profile(user_id: str, update: ProfileUpdate):
 @app.options("/profile/{user_id}")
 def options_profile(user_id: str):
     return {}
+class BroadcastMessage(BaseModel):
+    message: str
+
+@app.post("/broadcast")
+def broadcast_message(msg: BroadcastMessage):
+    profiles = supabase.table("profiles").select("phone, full_name").filter("role", "eq", "helper").execute()
+    sent = 0
+    for profile in profiles.data:
+        if profile.get("phone"):
+            send_sms(profile["phone"], f"Tennis update: {msg.message}")
+            sent += 1
+    return {"message": f"Sent to {sent} helpers"}
+
+@app.options("/broadcast")
+def options_broadcast():
+    return {}
