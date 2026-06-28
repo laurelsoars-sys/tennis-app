@@ -463,3 +463,38 @@ def broadcast_message(msg: BroadcastMessage):
 @app.options("/broadcast")
 def options_broadcast():
     return {}
+
+@app.get("/reliability")
+def get_reliability():
+    assignments = supabase.table("assignments").select("helper_id").filter("status", "eq", "approved").execute()
+    attendance = supabase.table("attendance").select("helper_id, showed_up").execute()
+    profiles = supabase.table("profiles").select("id, full_name").filter("role", "eq", "helper").execute()
+    
+    approved_counts = {}
+    for a in assignments.data:
+        hid = a["helper_id"]
+        approved_counts[hid] = approved_counts.get(hid, 0) + 1
+    
+    showed_counts = {}
+    for a in attendance.data:
+        if a["showed_up"]:
+            hid = a["helper_id"]
+            showed_counts[hid] = showed_counts.get(hid, 0) + 1
+    
+    result = {}
+    for profile in profiles.data:
+        pid = profile["id"]
+        approved = approved_counts.get(pid, 0)
+        showed = showed_counts.get(pid, 0)
+        if approved > 0:
+            rate = round((showed / approved) * 100)
+        else:
+            rate = None
+        result[pid] = {
+            "name": profile["full_name"],
+            "rate": rate,
+            "approved": approved,
+            "showed": showed
+        }
+    
+    return result

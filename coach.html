@@ -92,6 +92,8 @@
         const sessions = await sessionsRes.json();
         const fairnessRes = await fetch('https://tennis-app-9esu.onrender.com/fairness');
         const fairness = await fairnessRes.json();
+        const reliabilityRes = await fetch('https://tennis-app-9esu.onrender.com/reliability');
+        const reliability = await reliabilityRes.json();
         const dashboard = document.getElementById('dashboard');
 
         const counts = {};
@@ -139,7 +141,7 @@
                     : '<span class="tag tag-gray">No response</span>';
                   btns = statusTag;
                 } else if (status === 'approved') {
-  btns = `<div class="action-btns"><span class="tag tag-green">Approved</span><button class="btn btn-gray btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'pending')">Undo</button></div>`;
+                  btns = `<div class="action-btns"><span class="tag tag-green">Approved</span><button class="btn btn-gray btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'pending')">Undo</button></div>`;
                 } else if (status === 'waitlist') {
                   btns = `<div class="action-btns"><span class="tag tag-yellow">Waitlisted</span><button class="btn btn-approved btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'approved')">Approve</button><button class="btn btn-danger btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'declined')">Decline</button></div>`;
                 } else if (status === 'declined') {
@@ -154,11 +156,17 @@
                   btns = `<div class="action-btns"><button class="btn btn-approved btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'approved')">Approve</button><button class="btn btn-warning btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'waitlist')">Waitlist</button><button class="btn btn-danger btn-sm" onclick="updateStatus('${session.id}', '${a.helper_id}', 'declined')">Decline</button></div>`;
                 }
 
+                const rel = reliability[a.helper_id];
+                const relTag = rel && rel.rate !== null
+                  ? `<span class="tag ${rel.rate >= 80 ? 'tag-green' : rel.rate >= 50 ? 'tag-yellow' : 'tag-red'}" style="font-size:11px">${rel.rate}%</span>`
+                  : `<span class="tag tag-gray" style="font-size:11px">New</span>`;
+
                 return `
                   <div class="helper-row">
                     <span class="helper-name">
                       <span class="dot" style="background:${getColor(a.helper_name)}"></span>
                       ${a.helper_name || a.helper_id}
+                      ${relTag}
                     </span>
                     ${btns}
                   </div>`;
