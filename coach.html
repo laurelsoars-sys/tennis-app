@@ -181,7 +181,21 @@
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
                 <div>
                   <h2>${formatDate(session.date)}</h2>
-                  <p class="session-meta">${session.time} &middot; ${session.expected_kids} kids &middot; ${assignedIds.length} assigned${session.notes ? ` &middot; ${session.notes}` : ''}</p>
+                  ${(() => {
+                    const needed = Math.ceil(session.expected_kids / 6);
+                    const assigned = assignedIds.length;
+                    let warning = '';
+                    if (assigned === 0) {
+                      warning = `<span class="tag tag-red" style="margin-left:8px">No helpers assigned</span>`;
+                    } else if (assigned < needed) {
+                      warning = `<span class="tag tag-yellow" style="margin-left:8px">Need ${needed - assigned} more helper${needed - assigned > 1 ? 's' : ''}</span>`;
+                    } else if (assigned > needed + 1) {
+                      warning = `<span class="tag tag-yellow" style="margin-left:8px">May be overstaffed</span>`;
+                    } else {
+                      warning = `<span class="tag tag-green" style="margin-left:8px">Staffing looks good</span>`;
+                    }
+                    return `<p class="session-meta">${session.time} &middot; ${session.expected_kids} kids &middot; ${assigned} assigned ${warning}</p>`;
+                  })()}
                 </div>
                 ${actionBtns}
               </div>
