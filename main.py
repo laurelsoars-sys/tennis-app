@@ -498,3 +498,45 @@ def get_reliability():
         }
     
     return result
+from fastapi.responses import StreamingResponse
+import csv
+import io
+
+@app.get("/export/sessions")
+def export_sessions():
+    sessions = supabase.table("sessions").select("*").order("date").execute()
+    assignments = supabase.table("assignments").select("*").execute()
+    availability = supabase.table("availability").select("*").execute()
+    profiles = supabase.table("profiles").select("id, full_name").execute()
+    
+    profile_map = {p["id"]: p["full_name"] for p in profiles.data}
+    
+    assign_map = {}
+    for a in assignments.data:
+        sid = a["sessions_id"]
+        if sid not in assign_map:
+            assign_map[sid] = []
+        if a["status"] == "approved":
+            assign_map[sid].append(profile_map.get(a["helper_id"], a["helper_id"]))
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Date", "Time", "Expected Kids", "Status", "Notes", "Assigned Helpers"])
+    
+    for session in sessions.data:
+        helpers = ", ".join(assign_map.get(session["id"], []))
+        writer.writerow([
+            session["date"],
+            session["time"],
+            session["expected_kids"],
+            session.get("status", "active"),
+            session.get("notes", ""),
+            helpers
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=tennis-sessions.csv"}
+    )
