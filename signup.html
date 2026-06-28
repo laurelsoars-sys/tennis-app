@@ -71,6 +71,18 @@
         document.getElementById('error').textContent = 'Cannot reach server.';
       }
     }
-  </script>
+    </script>
+<button class="dark-toggle" onclick="toggleDark()" id="dark-btn">🌙</button>
+<script>
+    function toggleDark() {
+        const isDark = document.body.classList.toggle('dark');
+        localStorage.setItem('darkMode', isDark);
+        document.getElementById('dark-btn').textContent = isDark ? '☀️' : '🌙';
+    }
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark');
+        document.getElementById('dark-btn').textContent = '☀️';
+}
+</script>
 </body>
 </html>
