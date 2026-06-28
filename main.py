@@ -59,17 +59,20 @@ def home():
     return {"message": "Tennis app is running!"}
 
 @app.get("/sessions")
-def get_sessions(limit: int = 5, offset: int = 0, filter: str = "upcoming"):
+def get_sessions(limit: int = 5, offset: int = 0, filter: str = "upcoming", include_archived: bool = False):
     from datetime import date
     today = date.today().isoformat()
     result = supabase.table("sessions").select("*").order("date").execute()
     all_sessions = result.data
     
     if filter == "upcoming":
-        filtered = [s for s in all_sessions if s["date"] >= today]
+        filtered = [s for s in all_sessions if s["date"] >= today and not s.get("archived", False)]
+    elif filter == "past":
+        filtered = [s for s in all_sessions if s["date"] < today and not s.get("archived", False)]
     else:
-        filtered = [s for s in all_sessions if s["date"] < today]
+        filtered = all_sessions
     
+    filtered.sort(key=lambda x: (not x.get("pinned", False), x["date"]))
     return filtered[offset:offset+limit]
 
 class Session(BaseModel):
@@ -540,3 +543,10 @@ def export_sessions():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=tennis-sessions.csv"}
     )
+from datetime import date, timedelta
+
+@app.post("/archive")
+def auto_archive():
+    cutoff = (date.today() - timedelta(days=30)).isoformat()
+    supabase.table("sessions").update({"archived": True}).filter("date", "lt", cutoff).filter("archived", "eq", False).execute()
+    return {"message": "Archive complete"}

@@ -28,15 +28,17 @@
       <button class="btn btn-secondary btn-sm" onclick="window.location.href='broadcast.html'">Message helpers</button>
       <button class="btn btn-secondary btn-sm" onclick="window.location.href='sessions.html'">Helper view</button>
       <button class="btn btn-secondary btn-sm" onclick="logout()">Sign out</button>
-      <button class="btn btn-primary btn-sm" onclick="window.location.href='create-session.html'">+ New session</button>
+      <button class="btn btn-secondary btn-sm" onclick="runArchive()">Auto archive</button>
       <a href="https://tennis-app-9esu.onrender.com/export/sessions" class="btn btn-secondary btn-sm" download>Export CSV</a>
+      <button class="btn btn-primary btn-sm" onclick="window.location.href='create-session.html'">+ New session</button>
     </div>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" id="tab-upcoming" onclick="switchTab('upcoming')">Upcoming</button>
-    <button class="tab" id="tab-past" onclick="switchTab('past')">Past sessions</button>
-  </div>
+<div class="tabs">
+  <button class="tab active" id="tab-upcoming" onclick="switchTab('upcoming')">Upcoming</button>
+  <button class="tab" id="tab-past" onclick="switchTab('past')">Past sessions</button>
+  <button class="tab" id="tab-archive" onclick="switchTab('archive')">Archive</button>
+</div>
 
   <div id="dashboard"></div>
 
@@ -83,19 +85,21 @@
       page = 1;
       document.getElementById('tab-upcoming').classList.toggle('active', tab === 'upcoming');
       document.getElementById('tab-past').classList.toggle('active', tab === 'past');
+      document.getElementById('tab-archive').classList.toggle('active', tab === 'archive');
       loadDashboard();
     }
 
     async function loadDashboard() {
       document.getElementById('dashboard').innerHTML = '<div class="loading-state"><div class="spinner"></div><span>Loading dashboard...</span></div>';
       try {
-        const sessionsRes = await fetch(`https://tennis-app-9esu.onrender.com/sessions?limit=${LIMIT}&offset=${offset}&filter=${currentTab}`);
+        const sessionsRes = await fetch(`https://tennis-app-9esu.onrender.com/sessions?limit=${LIMIT}&offset=${offset}&filter=${currentTab === 'archive' ? 'past&include_archived=true' : currentTab}`);
         const sessions = await sessionsRes.json();
         const fairnessRes = await fetch('https://tennis-app-9esu.onrender.com/fairness');
         const fairness = await fairnessRes.json();
         const reliabilityRes = await fetch('https://tennis-app-9esu.onrender.com/reliability');
         const reliability = await reliabilityRes.json();
         const dashboard = document.getElementById('dashboard');
+        
 
         const counts = {};
         fairness.forEach(h => counts[h.name] = h.rate);
@@ -279,6 +283,12 @@
     }
 
     loadDashboard();
+    
+    async function runArchive() {
+      if (!confirm('Archive all sessions older than 30 days?')) return;
+      await fetch('https://tennis-app-9esu.onrender.com/archive', { method: 'POST' });
+      loadDashboard();
+    }
   </script>
 <button class="dark-toggle" onclick="toggleDark()" id="dark-btn">🌙</button>
 <script>
